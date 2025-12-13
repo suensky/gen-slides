@@ -1,11 +1,13 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { ArrowRight, Sparkles, Clock, Trash2, Play, TestTube2, Paperclip, File as FileIcon, Image as ImageIcon, Music, FileText, X } from 'lucide-react';
+import { ArrowRight, Sparkles, Clock, Trash2, Play, TestTube2, Paperclip, File as FileIcon, Image as ImageIcon, Music, FileText, X, Settings, ChevronDown } from 'lucide-react';
 import { PresentationData, Attachment } from '../types';
 import ConfirmationModal from './ConfirmationModal';
 import ThemeToggle from './ThemeToggle';
+import ImageSettingsModal from './ImageSettingsModal';
+import { IMAGE_MODELS, ASPECT_RATIOS, ImageConfig, DEFAULT_IMAGE_CONFIG, ImageModel, AspectRatio } from '../services/geminiService';
 
 interface HomeProps {
-    onSubmit: (topic: string, attachments: Attachment[]) => void;
+    onSubmit: (topic: string, attachments: Attachment[], imageConfig: ImageConfig) => void;
     history: PresentationData[];
     onLoadHistory: (presentation: PresentationData) => void;
     onDeleteHistory: (id: string) => void;
@@ -30,12 +32,14 @@ const Home: React.FC<HomeProps> = ({ onSubmit, history, onLoadHistory, onDeleteH
     const [presentationToDelete, setPresentationToDelete] = useState<string | null>(null);
     const [attachments, setAttachments] = useState<Attachment[]>([]);
     const [isDragging, setIsDragging] = useState(false);
+    const [imageConfig, setImageConfig] = useState<ImageConfig>(DEFAULT_IMAGE_CONFIG);
+    const [showImageSettingsModal, setShowImageSettingsModal] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (input.trim() || attachments.length > 0) {
-            onSubmit(input, attachments);
+            onSubmit(input, attachments, imageConfig);
         }
     };
 
@@ -115,6 +119,21 @@ const Home: React.FC<HomeProps> = ({ onSubmit, history, onLoadHistory, onDeleteH
         return <FileIcon size={14} className="text-zinc-400" />;
     };
 
+    // Get aspect ratio preview dimensions for the mini indicator
+    const getAspectRatioPreviewSize = (aspectRatio: AspectRatio) => {
+        const [w, h] = aspectRatio.split(':').map(Number);
+        const ratio = w / h;
+        const maxSize = 16;
+        if (ratio >= 1) {
+            return { width: maxSize, height: maxSize / ratio };
+        } else {
+            return { width: maxSize * ratio, height: maxSize };
+        }
+    };
+
+    const selectedModel = IMAGE_MODELS.find(m => m.id === imageConfig.model);
+    const aspectRatioPreviewSize = getAspectRatioPreviewSize(imageConfig.aspectRatio);
+
     return (
         <div className="flex-1 flex flex-col items-center p-6 bg-slate-50 dark:bg-zinc-950 relative overflow-hidden h-full transition-colors">
             {/* Theme Toggle */}
@@ -190,7 +209,7 @@ const Home: React.FC<HomeProps> = ({ onSubmit, history, onLoadHistory, onDeleteH
                                 )}
 
                                 <div className="flex justify-between items-center px-4 pb-2 border-t border-slate-200/50 dark:border-zinc-800/50 pt-3 mt-2">
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-2">
                                         <input
                                             type="file"
                                             multiple
@@ -207,9 +226,47 @@ const Home: React.FC<HomeProps> = ({ onSubmit, history, onLoadHistory, onDeleteH
                                             <Paperclip size={16} className="group-hover/attach:rotate-45 transition-transform" />
                                             <span className="hidden sm:inline">Attach</span>
                                         </button>
-                                        <span className="text-xs text-zinc-400 dark:text-zinc-600 flex items-center gap-1">
-                                            <Sparkles size={12} /> Powered by Gemini
-                                        </span>
+
+                                        {/* Divider */}
+                                        <div className="h-5 w-px bg-slate-200 dark:bg-zinc-700" />
+
+                                        {/* Model Selector with Settings */}
+                                        <div className="flex items-center gap-1">
+                                            <div className="relative">
+                                                <select
+                                                    value={imageConfig.model}
+                                                    onChange={(e) => setImageConfig(prev => ({ ...prev, model: e.target.value as ImageModel }))}
+                                                    className="appearance-none px-2 py-1.5 pr-6 bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg text-sm font-medium text-zinc-600 dark:text-zinc-400 focus:ring-2 focus:ring-purple-500 focus:outline-none transition cursor-pointer hover:bg-slate-200 dark:hover:bg-zinc-700"
+                                                    title={selectedModel?.name}
+                                                >
+                                                    {IMAGE_MODELS.map((model) => (
+                                                        <option key={model.id} value={model.id}>
+                                                            {model.id === 'gemini-2.5-flash-image' ? '⚡ Flash' : '🍌 Pro'}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <ChevronDown size={12} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+                                            </div>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowImageSettingsModal(true)}
+                                                className="flex items-center gap-1.5 px-2 py-1.5 text-zinc-500 dark:text-zinc-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition group/settings"
+                                                title="Image Settings"
+                                            >
+                                                {/* Aspect Ratio Preview Shape */}
+                                                <div
+                                                    className="bg-purple-500/30 dark:bg-purple-400/30 rounded-sm border border-purple-500/50 dark:border-purple-400/50 group-hover/settings:bg-purple-500/50 transition"
+                                                    style={{
+                                                        width: aspectRatioPreviewSize.width,
+                                                        height: aspectRatioPreviewSize.height
+                                                    }}
+                                                />
+                                                <span className="text-xs font-medium hidden sm:inline">{imageConfig.aspectRatio}</span>
+                                                <Settings size={14} className="group-hover/settings:rotate-45 transition-transform" />
+                                            </button>
+                                        </div>
+
                                     </div>
                                     <button
                                         type="submit"
@@ -282,14 +339,11 @@ const Home: React.FC<HomeProps> = ({ onSubmit, history, onLoadHistory, onDeleteH
                     </div>
                 </div>
 
-                {/* Test Link */}
-                <div className="py-4 text-center flex flex-col items-center gap-2">
-                    <button
-                        onClick={onTestPage}
-                        className="text-[10px] text-zinc-400 dark:text-zinc-700 hover:text-zinc-600 dark:hover:text-zinc-500 flex items-center gap-1 transition"
-                    >
-                        <TestTube2 size={10} /> Test Page
-                    </button>
+                {/* Footer */}
+                <div className="absolute bottom-4 left-0 right-0 text-center">
+                    <span className="text-[10px] text-zinc-400/60 dark:text-zinc-600/60 flex items-center justify-center gap-1">
+                        <Sparkles size={10} /> Powered by Gemini
+                    </span>
                 </div>
             </div>
 
@@ -301,6 +355,13 @@ const Home: React.FC<HomeProps> = ({ onSubmit, history, onLoadHistory, onDeleteH
                 isDangerous={true}
                 onClose={() => setPresentationToDelete(null)}
                 onConfirm={confirmDelete}
+            />
+
+            <ImageSettingsModal
+                isOpen={showImageSettingsModal}
+                config={imageConfig}
+                onClose={() => setShowImageSettingsModal(false)}
+                onSave={setImageConfig}
             />
         </div>
     );

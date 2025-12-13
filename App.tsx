@@ -5,14 +5,18 @@ import SlideShow from './components/SlideShow';
 import TestPage from './components/TestPage';
 import { Slide, ViewState, PresentationData, Attachment } from './types';
 import { getAllPresentations, savePresentation, deletePresentation } from './services/db';
+import { ImageConfig, DEFAULT_IMAGE_CONFIG } from './services/geminiService';
 
 const App: React.FC = () => {
   const [view, setView] = useState<ViewState>('HOME');
   const [currentPresentation, setCurrentPresentation] = useState<PresentationData | null>(null);
   const [history, setHistory] = useState<PresentationData[]>([]);
-  
+
   // Temporary state to pass attachments to outline editor
   const [tempAttachments, setTempAttachments] = useState<Attachment[]>([]);
+
+  // Image generation config
+  const [imageConfig, setImageConfig] = useState<ImageConfig>(DEFAULT_IMAGE_CONFIG);
 
   useEffect(() => {
     loadHistory();
@@ -28,14 +32,15 @@ const App: React.FC = () => {
   };
 
   // Navigate to Outline Editor
-  const handleCreateOutline = (newTopic: string, attachments: Attachment[]) => {
+  const handleCreateOutline = (newTopic: string, attachments: Attachment[], config: ImageConfig = DEFAULT_IMAGE_CONFIG) => {
     setCurrentPresentation({
-        id: crypto.randomUUID(),
-        topic: newTopic || 'Untitled Presentation',
-        slides: [],
-        createdAt: Date.now()
+      id: crypto.randomUUID(),
+      topic: newTopic || 'Untitled Presentation',
+      slides: [],
+      createdAt: Date.now()
     });
     setTempAttachments(attachments);
+    setImageConfig(config);
     setView('OUTLINE');
   };
 
@@ -44,14 +49,14 @@ const App: React.FC = () => {
     if (!currentPresentation) return;
 
     const newPresentation: PresentationData = {
-        ...currentPresentation,
-        slides: finalizedSlides,
-        createdAt: Date.now()
+      ...currentPresentation,
+      slides: finalizedSlides,
+      createdAt: Date.now()
     };
 
     // Save initial structure (without images mostly) to DB
     await savePresentation(newPresentation);
-    
+
     // Update local history state immediately
     setHistory(prev => [newPresentation, ...prev]);
 
@@ -67,55 +72,56 @@ const App: React.FC = () => {
   };
 
   const handleDeleteHistory = async (id: string) => {
-      await deletePresentation(id);
-      loadHistory();
+    await deletePresentation(id);
+    loadHistory();
   }
 
   const renderView = () => {
     switch (view) {
       case 'HOME':
         return (
-            <Home 
-                onSubmit={handleCreateOutline} 
-                history={history}
-                onLoadHistory={handleLoadHistory}
-                onDeleteHistory={handleDeleteHistory}
-                onTestPage={() => setView('TEST')}
-            />
+          <Home
+            onSubmit={handleCreateOutline}
+            history={history}
+            onLoadHistory={handleLoadHistory}
+            onDeleteHistory={handleDeleteHistory}
+            onTestPage={() => setView('TEST')}
+          />
         );
       case 'OUTLINE':
         return (
-          <OutlineEditor 
+          <OutlineEditor
             topic={currentPresentation?.topic || ''}
             initialAttachments={tempAttachments}
-            onBack={() => setView('HOME')} 
+            onBack={() => setView('HOME')}
             onGenerateSlides={handleGenerateSlides}
           />
         );
       case 'SLIDESHOW':
         if (!currentPresentation) return null;
         return (
-          <SlideShow 
+          <SlideShow
             topic={currentPresentation.topic}
-            slides={currentPresentation.slides} 
+            slides={currentPresentation.slides}
             presentationId={currentPresentation.id}
+            imageConfig={imageConfig}
             onBack={() => {
-                loadHistory(); // Refresh history to capture any new images generated
-                setView('HOME');
-            }} 
+              loadHistory(); // Refresh history to capture any new images generated
+              setView('HOME');
+            }}
           />
         );
       case 'TEST':
         return <TestPage onBack={() => setView('HOME')} />;
       default:
         return (
-            <Home 
-                onSubmit={handleCreateOutline} 
-                history={history} 
-                onLoadHistory={handleLoadHistory} 
-                onDeleteHistory={handleDeleteHistory}
-                onTestPage={() => setView('TEST')}
-            />
+          <Home
+            onSubmit={handleCreateOutline}
+            history={history}
+            onLoadHistory={handleLoadHistory}
+            onDeleteHistory={handleDeleteHistory}
+            onTestPage={() => setView('TEST')}
+          />
         );
     }
   };

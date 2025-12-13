@@ -10,21 +10,54 @@ console.log('API Key loaded:', API_KEY ? `${API_KEY.substring(0, 10)}...` : 'EMP
 const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 const OUTLINE_SYSTEM_INSTRUCTION = `
-You are a world-class presentation designer. 
-Your goal is to create a JSON array of slides based on the user's input.
-Each slide must have a 'title', 'content', and a 'visualDescription'.
+You are an elite presentation architect and visual storytelling expert trusted by Fortune 500 executives, TED speakers, and world-renowned thought leaders. Your presentations have won international design awards and captivated audiences of millions.
 
-Rules for 'content':
-- Use bullet points for key takeaways.
-- CRITICAL: SEPARATE EACH POINT WITH A NEWLINE CHARACTER (\\n).
-- Do not use markdown hyphens or asterisks at the start of lines, just the text separated by newlines.
-- Keep text concise, impactful, and easy to read.
+Your mission: Transform any topic into a stunning, persuasive, and memorable slide deck that rivals presentations from Apple keynotes, McKinsey strategy decks, and award-winning TED talks.
 
-Rules for 'visualDescription':
-- Detailed prompt for an image generator (no text in image).
-- Describe style, colors, lighting, and subject.
+=== SLIDE STRUCTURE MASTERY ===
+Each slide must have: 'title', 'content', and 'visualDescription'
 
-Limit the output to a maximum of 12 slides unless requested otherwise.
+=== TITLE GUIDELINES ===
+- Craft powerful, action-oriented titles that spark curiosity
+- Use the "So What?" test: every title should answer why the audience should care
+- Employ rhetorical techniques: questions, bold statements, surprising facts
+- Maximum 8 words for punchy impact
+- Examples of excellent titles: "Why 90% of Startups Fail", "The $1 Trillion Opportunity", "Rethinking Everything"
+
+=== CONTENT MASTERY ===
+- CRITICAL: SEPARATE EACH POINT WITH A NEWLINE CHARACTER (\\n)
+- Do NOT use markdown hyphens, asterisks, or bullet symbols - just clean text separated by newlines
+- Apply the "Rule of Three": 3 key points per slide maximum
+- Each point: one powerful idea, 10-15 words max
+- Use concrete numbers, statistics, and specific examples
+- Transform abstract concepts into tangible, relatable insights
+- Include strategic questions to engage the audience
+- Build narrative tension: problem → insight → solution → call to action
+
+=== VISUAL DESCRIPTION EXCELLENCE ===
+- Create cinematic, gallery-worthy visual descriptions for AI image generation
+- Specify: composition, lighting (golden hour, dramatic, soft diffused), color palette, mood, perspective
+- Request high-end photographic or artistic styles: "editorial photography", "fine art", "minimalist design"
+- Ensure visuals metaphorically reinforce the message
+- NEVER request text, words, or characters in the image - backgrounds only
+- Include technical details: depth of field, focal length feel, texture quality
+
+=== PRESENTATION FLOW ARCHITECTURE ===
+1. OPENING: Hook with a provocative question, surprising statistic, or bold statement
+2. CONTEXT: Establish urgency - why this matters NOW
+3. CHALLENGE: Define the problem with emotional resonance
+4. INSIGHTS: Deliver 3-5 key revelations with evidence
+5. SOLUTION: Present the path forward with clarity
+6. PROOF: Include case studies, data, testimonials where relevant
+7. CLOSING: End with a memorable call-to-action or thought-provoking conclusion
+
+=== QUALITY STANDARDS ===
+- Every slide should be LinkedIn/Twitter-sharable on its own
+- Content should work in both read-ahead and live presentation formats
+- Design for the "billboard test": understandable in 3 seconds from 6 feet away
+- Aim for emotional resonance + intellectual substance
+
+Limit output to maximum 12 slides unless otherwise requested.
 `;
 
 const slideSchema: Schema = {
@@ -70,11 +103,15 @@ export const generateOutlineStream = async (
 
     // Add the text prompt
     parts.push({
-      text: `Create a slide deck outline for: ${topic || 'the provided content'}.`
+      text: `Create a world-class, award-winning presentation deck for: ${topic || 'the provided content'}. 
+      
+Design this as if it will be delivered at a major keynote, TED talk, or Fortune 500 board meeting. 
+Every slide should be visually stunning and intellectually compelling. 
+Build a narrative arc that captivates from the first slide to the last.`
     });
 
     const responseStream = await ai.models.generateContentStream({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.5-pro',
       contents: { parts },
       config: {
         systemInstruction: OUTLINE_SYSTEM_INSTRUCTION,
@@ -129,13 +166,19 @@ export const generateSingleSlide = async (
             
             New Slide Request: ${slideDescription}
             
-            Create a single slide that fits perfectly into the flow of this presentation at the marked position.
-            Ensure the content flows logically from the previous slide and leads into the next slide.
-            Match the tone and style of the existing deck.
+            Create a single, award-winning slide that seamlessly integrates into this world-class presentation.
+            
+            Requirements:
+            - Flow naturally from the previous slide's narrative thread
+            - Create anticipation for what comes next
+            - Match and elevate the professional tone of the existing deck
+            - Craft a title that commands attention
+            - Include 2-3 powerful, memorable points
+            - Design a visual description worthy of a premium stock photography site
         `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.5-pro',
       contents: prompt,
       config: {
         systemInstruction: OUTLINE_SYSTEM_INSTRUCTION, // Reuse the same style rules
@@ -154,32 +197,82 @@ export const generateSingleSlide = async (
   }
 }
 
-export const generateSlideImage = async (slide: Slide): Promise<string> => {
+// Image generation model options
+export const IMAGE_MODELS = [
+  { id: 'gemini-2.5-flash-image', name: 'Gemini 2.5 Flash Image', supportsImageSize: false },
+  { id: 'gemini-3-pro-image-preview', name: 'Gemini 3 Pro Image', supportsImageSize: true }
+] as const;
+
+export const ASPECT_RATIOS = ['1:1', '16:9', '9:16', '4:3', '3:4'] as const;
+export const IMAGE_SIZES = ['1K', '2K'] as const;
+
+export type ImageModel = typeof IMAGE_MODELS[number]['id'];
+export type AspectRatio = typeof ASPECT_RATIOS[number];
+export type ImageSize = typeof IMAGE_SIZES[number];
+
+export interface ImageConfig {
+  model: ImageModel;
+  aspectRatio: AspectRatio;
+  imageSize?: ImageSize;
+}
+
+export const DEFAULT_IMAGE_CONFIG: ImageConfig = {
+  model: 'gemini-2.5-flash-image',
+  aspectRatio: '16:9'
+};
+
+export const generateSlideImage = async (
+  slide: Slide,
+  config: ImageConfig = DEFAULT_IMAGE_CONFIG
+): Promise<string> => {
   try {
-    // Using gemini-2.5-flash-image (Nano Banana)
-    // Updated prompt to strictly enforce no text and correct aspect ratio
     const prompt = `
-      Create a high-quality, 16:9 aspect ratio background image for a presentation slide.
+      Ultra-premium, award-winning presentation background image.
       
       Visual Concept: ${slide.visualDescription}
-      Context: ${slide.title}
+      Thematic Context: ${slide.title}
       
-      Style Guidelines:
-      - Professional, Cinematic, Minimalist, Dark Mode aesthetic.
-      - Ensure the center area is not too busy to allow for text overlay.
+      === TECHNICAL SPECIFICATIONS ===
+      - Aspect Ratio: ${config.aspectRatio}
+      - Resolution: 4K quality, crystal clear
+      - Style: Cinematic, editorial, gallery-worthy
       
-      CRITICAL: 
-      - This image must contain NO TEXT, NO WORDS, and NO CHARACTERS. 
-      - It is a background only.
+      === VISUAL STYLE REQUIREMENTS ===
+      - Modern, sophisticated, premium aesthetic
+      - Rich color depth with professional color grading
+      - Dramatic yet elegant lighting (studio quality)
+      - Clean composition with strategic negative space in center for text overlay
+      - Subtle depth of field for professional look
+      - Magazine cover or high-end advertising quality
+      
+      === MOOD & ATMOSPHERE ===
+      - Evoke professionalism, innovation, and authority
+      - Balance between visual interest and presentation functionality
+      - Premium texture and material quality
+      
+      === ABSOLUTE REQUIREMENTS ===
+      - ZERO text, words, letters, numbers, or characters
+      - Pure visual background only
+      - No watermarks, logos, or overlays
+      - Suitable as a backdrop for white/light text overlay
     `;
 
+    // Build imageConfig based on model capabilities
+    const imageConfig: { aspectRatio: string; imageSize?: string } = {
+      aspectRatio: config.aspectRatio
+    };
+
+    // Only add imageSize for models that support it
+    const modelInfo = IMAGE_MODELS.find(m => m.id === config.model);
+    if (modelInfo?.supportsImageSize && config.imageSize) {
+      imageConfig.imageSize = config.imageSize;
+    }
+
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
+      model: config.model,
       contents: prompt,
       config: {
-        imageConfig: {
-          aspectRatio: "16:9"
-        }
+        imageConfig
       }
     });
 

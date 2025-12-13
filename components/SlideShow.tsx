@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { ArrowLeft, Download, Loader2, Undo, Redo } from 'lucide-react';
 import pptxgen from 'pptxgenjs';
 import { Slide } from '../types';
-import { generateSlideImage, generateSingleSlide } from '../services/geminiService';
+import { generateSlideImage, generateSingleSlide, ImageConfig } from '../services/geminiService';
 import { updateSlideImageInPresentation, updateSlideContentInPresentation, savePresentation } from '../services/db';
 
 // Sub-components
@@ -18,6 +18,7 @@ interface SlideShowProps {
   onBack: () => void;
   topic: string;
   presentationId: string;
+  imageConfig: ImageConfig;
 }
 
 // Replicating CanvasObject interface for parsing purposes
@@ -37,7 +38,7 @@ interface CanvasObject {
   field?: 'title' | 'content';
 }
 
-const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, topic, presentationId }) => {
+const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, topic, presentationId, imageConfig }) => {
   const [slides, setSlides] = useState<Slide[]>(initialSlides);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [generatingCount, setGeneratingCount] = useState(0);
@@ -185,7 +186,7 @@ const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, to
     setGeneratingCount(c => c + 1);
 
     try {
-      const base64 = await generateSlideImage(slide);
+      const base64 = await generateSlideImage(slide, imageConfig);
 
       // Check for empty string (failure)
       if (!base64) {
