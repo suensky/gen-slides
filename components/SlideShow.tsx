@@ -653,9 +653,9 @@ const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, to
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {generatingCount > 0 && (
-            <span className="text-xs text-zinc-500 animate-pulse flex items-center gap-2">
+            <span className="text-xs text-zinc-500 animate-pulse flex items-center gap-2 mr-2">
               <Loader2 size={12} className="animate-spin" />
               Processing {generatingCount}...
             </span>
@@ -663,18 +663,19 @@ const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, to
 
           <button
             onClick={() => setIsPresentMode(true)}
-            className="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:from-violet-500 hover:to-indigo-500 transition shadow-lg shadow-violet-500/25"
+            className="group flex items-center gap-2 bg-black dark:bg-white text-white dark:text-black px-5 py-2.5 rounded-full text-sm font-medium hover:opacity-90 active:scale-95 transition-all shadow-sm"
           >
-            <Play size={16} />
+            <Play size={16} className="fill-current" />
             <span className="hidden sm:inline">Present</span>
           </button>
+
           <button
             onClick={handleDownloadPPTX}
             disabled={isExporting}
-            className="flex items-center gap-2 bg-zinc-900 dark:bg-white text-white dark:text-black px-4 py-2 rounded-lg text-sm font-bold hover:bg-zinc-700 dark:hover:bg-zinc-200 disabled:opacity-50 transition"
+            className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 px-5 py-2.5 rounded-full text-sm font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-95 disabled:opacity-50 disabled:active:scale-100 transition-all"
           >
             {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-            <span className="hidden sm:inline">Export PPTX</span>
+            <span className="hidden sm:inline">Export</span>
           </button>
         </div>
       </div>
