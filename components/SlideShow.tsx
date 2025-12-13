@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { ArrowLeft, Download, Loader2, Undo, Redo } from 'lucide-react';
+import { ArrowLeft, Download, Loader2, Undo, Redo, Play } from 'lucide-react';
 import pptxgen from 'pptxgenjs';
 import { Slide } from '../types';
 import { generateSlideImage, generateSingleSlide, ImageConfig } from '../services/geminiService';
@@ -12,6 +12,7 @@ import RegenerateModal from './RegenerateModal';
 import NewSlideModal from './NewSlideModal';
 import ConfirmationModal from './ConfirmationModal';
 import ThemeToggle from './ThemeToggle';
+import PresentationMode from './PresentationMode';
 
 interface SlideShowProps {
   slides: Slide[];
@@ -59,10 +60,35 @@ const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, to
   // New Slide Modal State
   const [showNewSlideModal, setShowNewSlideModal] = useState(false);
   const [newSlideIndex, setNewSlideIndex] = useState<number>(-1);
+
+  // Presentation Mode State
+  const [isPresentMode, setIsPresentMode] = useState(false);
   const [isCreatingSlide, setIsCreatingSlide] = useState(false);
 
   const generatedRef = useRef<Set<string>>(new Set());
   const abortedRef = useRef<Set<string>>(new Set());
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't navigate if user is typing in an input or textarea
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
+
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        setCurrentIndex(c => Math.max(0, c - 1));
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        setCurrentIndex(c => Math.min(slides.length - 1, c + 1));
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [slides.length]);
 
   // --- History Management ---
 
@@ -636,6 +662,13 @@ const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, to
           )}
           <ThemeToggle />
           <button
+            onClick={() => setIsPresentMode(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:from-violet-500 hover:to-indigo-500 transition shadow-lg shadow-violet-500/25"
+          >
+            <Play size={16} />
+            <span className="hidden sm:inline">Present</span>
+          </button>
+          <button
             onClick={handleDownloadPPTX}
             disabled={isExporting}
             className="flex items-center gap-2 bg-zinc-900 dark:bg-white text-white dark:text-black px-4 py-2 rounded-lg text-sm font-bold hover:bg-zinc-700 dark:hover:bg-zinc-200 disabled:opacity-50 transition"
@@ -697,6 +730,15 @@ const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, to
         onClose={() => setSlideToDelete(null)}
         onConfirm={confirmDeleteSlide}
       />
+
+      {/* Presentation Mode */}
+      {isPresentMode && (
+        <PresentationMode
+          slides={slides}
+          startIndex={currentIndex}
+          onExit={() => setIsPresentMode(false)}
+        />
+      )}
 
     </div>
   );
