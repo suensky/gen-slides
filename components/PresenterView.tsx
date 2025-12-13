@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Stage, Layer, Rect, Text, Image as KonvaImage } from 'react-konva';
 import useImage from 'use-image';
-import { ChevronLeft, ChevronRight, X, Clock, Monitor, MonitorOff } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Clock, Monitor, MonitorOff, GripHorizontal } from 'lucide-react';
 import { Slide } from '../types';
 import { setActivePresentationSlides, clearActivePresentationSlides } from '../services/db';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface PresenterViewProps {
     slides: Slide[];
@@ -15,6 +16,11 @@ interface PresenterViewProps {
 const CANVAS_WIDTH = 1280;
 const CANVAS_HEIGHT = 720;
 const LINE_HEIGHT = 1.4;
+
+// Resizable notes configuration
+const MIN_NOTES_HEIGHT = 80;
+const MAX_NOTES_HEIGHT = 320;
+const DEFAULT_NOTES_HEIGHT = 160;
 
 interface CanvasObject {
     id: string;
@@ -91,7 +97,7 @@ const getLayoutObjects = (layout: string, title: string, content: string): Canva
 };
 
 // Slide Preview Component
-const SlidePreview: React.FC<{ slide: Slide; scale: number; label?: string; isNext?: boolean }> = ({ slide, scale, label, isNext }) => {
+const SlidePreview: React.FC<{ slide: Slide; scale: number; label?: string; isNext?: boolean; isDark?: boolean }> = ({ slide, scale, label, isNext, isDark = true }) => {
     const getCanvasObjects = (s: Slide): CanvasObject[] => {
         if (s.customCanvasJson) {
             try {
@@ -106,9 +112,24 @@ const SlidePreview: React.FC<{ slide: Slide; scale: number; label?: string; isNe
     const objects = getCanvasObjects(slide);
 
     return (
-        <div className={`relative rounded-lg overflow-hidden border-2 ${isNext ? 'border-zinc-600' : 'border-violet-500'} shadow-2xl`}>
+        <div
+            className={`relative rounded-xl overflow-hidden shadow-2xl transition-all duration-200 ${isNext
+                    ? isDark ? 'ring-1 ring-white/10' : 'ring-1 ring-black/10'
+                    : 'ring-2 ring-violet-500/70'
+                }`}
+            style={{
+                boxShadow: isDark
+                    ? '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                    : '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+            }}
+        >
             {label && (
-                <div className={`absolute top-0 left-0 right-0 z-10 px-3 py-1.5 text-xs font-semibold ${isNext ? 'bg-zinc-700 text-zinc-300' : 'bg-violet-600 text-white'}`}>
+                <div
+                    className={`absolute top-0 left-0 right-0 z-10 px-4 py-2 text-xs font-medium backdrop-blur-md ${isNext
+                            ? isDark ? 'bg-white/5 text-white/70' : 'bg-black/5 text-black/70'
+                            : 'bg-violet-500/90 text-white'
+                        }`}
+                >
                     {label}
                 </div>
             )}
@@ -170,14 +191,22 @@ const SlidePreview: React.FC<{ slide: Slide; scale: number; label?: string; isNe
 };
 
 const PresenterView: React.FC<PresenterViewProps> = ({ slides, startIndex, onExit, onNotesChange }) => {
+    const { isDark } = useTheme();
     const [currentIndex, setCurrentIndex] = useState(startIndex);
     const [elapsedTime, setElapsedTime] = useState(0);
     const [localNotes, setLocalNotes] = useState<Record<string, string>>({});
     const [audienceWindowOpen, setAudienceWindowOpen] = useState(false);
+    const [notesHeight, setNotesHeight] = useState(() => {
+        const stored = localStorage.getItem('presenter-notes-height');
+        return stored ? parseInt(stored, 10) : DEFAULT_NOTES_HEIGHT;
+    });
+    const [isResizing, setIsResizing] = useState(false);
 
     const channelRef = useRef<BroadcastChannel | null>(null);
     const audienceWindowRef = useRef<Window | null>(null);
     const startTimeRef = useRef(Date.now());
+    const resizeStartY = useRef(0);
+    const resizeStartHeight = useRef(0);
 
     const currentSlide = slides[currentIndex];
     const nextSlide = currentIndex < slides.length - 1 ? slides[currentIndex + 1] : null;
@@ -324,35 +353,75 @@ const PresenterView: React.FC<PresenterViewProps> = ({ slides, startIndex, onExi
         onExit();
     };
 
-    // Calculate scales for previews
-    const currentSlideScale = 0.45;
-    const nextSlideScale = 0.25;
+    // Resize handlers for speaker notes
+    const handleResizeStart = useCallback((e: React.MouseEvent) => {
+        e.preventDefault();
+        setIsResizing(true);
+        resizeStartY.current = e.clientY;
+        resizeStartHeight.current = notesHeight;
+    }, [notesHeight]);
+
+    useEffect(() => {
+        if (!isResizing) return;
+
+        const handleMouseMove = (e: MouseEvent) => {
+            const deltaY = resizeStartY.current - e.clientY;
+            const newHeight = Math.min(MAX_NOTES_HEIGHT, Math.max(MIN_NOTES_HEIGHT, resizeStartHeight.current + deltaY));
+            setNotesHeight(newHeight);
+        };
+
+        const handleMouseUp = () => {
+            setIsResizing(false);
+            localStorage.setItem('presenter-notes-height', notesHeight.toString());
+        };
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isResizing, notesHeight]);
+
+    // Calculate scales for previews - larger sizes
+    const currentSlideScale = 0.55;
+    const nextSlideScale = 0.32;
+
+    // Theme-aware colors
+    const bgPrimary = isDark ? 'bg-zinc-900' : 'bg-gray-50';
+    const bgSecondary = isDark ? 'bg-zinc-800/80' : 'bg-white/80';
+    const bgTertiary = isDark ? 'bg-zinc-800' : 'bg-white';
+    const borderColor = isDark ? 'border-white/10' : 'border-black/10';
+    const textPrimary = isDark ? 'text-white' : 'text-gray-900';
+    const textSecondary = isDark ? 'text-zinc-300' : 'text-gray-600';
+    const textMuted = isDark ? 'text-zinc-500' : 'text-gray-400';
 
     return (
-        <div className="fixed inset-0 z-[9999] bg-zinc-900 flex flex-col">
-            {/* Top Bar */}
-            <div className="h-14 bg-zinc-800 border-b border-zinc-700 flex items-center justify-between px-6">
+        <div className={`fixed inset-0 z-[9999] ${bgPrimary} flex flex-col`}>
+            {/* Top Bar - Glassmorphism style */}
+            <div className={`h-14 ${bgSecondary} backdrop-blur-xl border-b ${borderColor} flex items-center justify-between px-6`}>
                 <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 text-amber-400">
+                    <div className="flex items-center gap-2 text-amber-500">
                         <Clock size={18} />
-                        <span className="font-mono text-lg font-semibold">{formatTime(elapsedTime)}</span>
+                        <span className="font-mono text-lg font-semibold tabular-nums">{formatTime(elapsedTime)}</span>
                     </div>
                 </div>
 
-                <div className="text-white font-medium">
-                    Slide <span className="text-violet-400">{currentIndex + 1}</span> of {slides.length}
+                <div className={`${textPrimary} font-medium`}>
+                    Slide <span className="text-violet-500 font-semibold">{currentIndex + 1}</span> of {slides.length}
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
                     {audienceWindowOpen ? (
-                        <div className="flex items-center gap-2 text-green-400 text-sm">
+                        <div className="flex items-center gap-2 text-emerald-500 text-sm font-medium">
                             <Monitor size={16} />
                             <span>Audience window open</span>
                         </div>
                     ) : (
                         <button
                             onClick={openAudienceWindow}
-                            className="flex items-center gap-2 text-zinc-400 hover:text-white text-sm transition"
+                            className={`flex items-center gap-2 ${textMuted} hover:${textPrimary} text-sm transition-colors duration-200`}
                         >
                             <MonitorOff size={16} />
                             <span>Open audience window</span>
@@ -360,7 +429,7 @@ const PresenterView: React.FC<PresenterViewProps> = ({ slides, startIndex, onExi
                     )}
                     <button
                         onClick={handleExit}
-                        className="flex items-center gap-2 bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition"
+                        className="flex items-center gap-2 bg-red-500/90 hover:bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-lg shadow-red-500/20"
                     >
                         <X size={16} />
                         End Presentation
@@ -369,80 +438,100 @@ const PresenterView: React.FC<PresenterViewProps> = ({ slides, startIndex, onExi
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 flex overflow-hidden p-4 gap-4">
-                {/* Left: Current Slide + Speaker Notes (side by side) */}
-                <div className="flex-1 flex gap-4">
-                    {/* Current Slide Preview */}
+            <div className="flex-1 flex overflow-hidden p-5 gap-5">
+                {/* Left Column: Current Slide + Resizable Speaker Notes */}
+                <div className="flex-1 flex flex-col gap-0 min-w-0">
+                    {/* Current Slide Preview - Large and prominent */}
                     <div className="flex-1 flex items-center justify-center">
                         <SlidePreview
                             slide={currentSlide}
                             scale={currentSlideScale}
                             label={`Current Slide: ${currentSlide.title}`}
+                            isDark={isDark}
                         />
                     </div>
 
-                    {/* Speaker Notes - Next to current slide */}
-                    <div className="w-80 bg-zinc-800 rounded-lg border border-zinc-700 flex flex-col">
-                        <div className="px-4 py-2 border-b border-zinc-700 flex items-center justify-between">
-                            <span className="text-sm font-semibold text-zinc-300">Speaker Notes</span>
+                    {/* Resize Handle */}
+                    <div
+                        className={`h-6 flex items-center justify-center cursor-ns-resize group transition-colors duration-200 ${isResizing ? (isDark ? 'bg-violet-500/20' : 'bg-violet-500/10') : ''
+                            }`}
+                        onMouseDown={handleResizeStart}
+                    >
+                        <div className={`flex items-center gap-1 px-4 py-1 rounded-full ${isDark ? 'bg-zinc-700/50 group-hover:bg-zinc-600/50' : 'bg-gray-200/50 group-hover:bg-gray-300/50'} transition-colors duration-200`}>
+                            <GripHorizontal size={14} className={textMuted} />
+                        </div>
+                    </div>
+
+                    {/* Speaker Notes - Resizable */}
+                    <div
+                        className={`${bgTertiary} rounded-xl border ${borderColor} flex flex-col overflow-hidden backdrop-blur-sm`}
+                        style={{ height: notesHeight }}
+                    >
+                        <div className={`px-4 py-2 border-b ${borderColor} flex items-center justify-between shrink-0`}>
+                            <span className={`text-sm font-medium ${textSecondary}`}>Speaker Notes</span>
+                            <span className={`text-xs ${textMuted}`}>✓ Not visible to audience</span>
                         </div>
                         <textarea
                             value={localNotes[currentSlide.id] || ''}
                             onChange={(e) => handleNotesChange(e.target.value)}
-                            placeholder="Add your speaker notes here...&#10;&#10;These notes are only visible to you, not the audience."
-                            className="flex-1 bg-transparent text-zinc-100 p-4 resize-none focus:outline-none text-sm leading-relaxed placeholder:text-zinc-600"
+                            placeholder="Add your speaker notes here..."
+                            className={`flex-1 bg-transparent ${textPrimary} p-4 resize-none focus:outline-none text-sm leading-relaxed placeholder:${textMuted}`}
                         />
-                        <div className="px-4 py-2 border-t border-zinc-700">
-                            <span className="text-xs text-zinc-500">✓ Not visible to audience</span>
-                        </div>
                     </div>
                 </div>
 
-                {/* Right: Next Slide + Info */}
-                <div className="w-72 flex flex-col gap-4">
-                    {/* Next Slide */}
-                    <div className="flex-1 flex flex-col">
-                        <h3 className="text-zinc-400 text-sm font-medium mb-2">Up Next</h3>
+                {/* Right Column: Next Slide + Keyboard Shortcuts */}
+                <div className="w-[360px] flex flex-col gap-4 shrink-0">
+                    {/* Next Slide - Larger preview */}
+                    <div className="flex flex-col">
+                        <h3 className={`${textMuted} text-sm font-medium mb-3`}>Up Next</h3>
                         {nextSlide ? (
                             <SlidePreview
                                 slide={nextSlide}
                                 scale={nextSlideScale}
                                 isNext
+                                isDark={isDark}
                             />
                         ) : (
-                            <div className="h-40 rounded-lg bg-zinc-800 border-2 border-zinc-700 flex items-center justify-center">
-                                <span className="text-zinc-500 text-sm">End of presentation</span>
+                            <div className={`h-44 rounded-xl ${bgTertiary} border ${borderColor} flex items-center justify-center`}>
+                                <span className={`${textMuted} text-sm`}>End of presentation</span>
                             </div>
                         )}
                     </div>
 
-                    {/* Quick Info */}
-                    <div className="bg-zinc-800 rounded-lg border border-zinc-700 p-4">
-                        <h4 className="text-sm font-semibold text-zinc-300 mb-2">Keyboard Shortcuts</h4>
-                        <div className="space-y-1 text-xs text-zinc-400">
-                            <div className="flex justify-between">
-                                <span>Next slide</span>
-                                <span className="text-zinc-500">→ / Space</span>
+                    {/* Spacer to push shortcuts down */}
+                    <div className="flex-1" />
+
+                    {/* Keyboard Shortcuts - Compact and elegant */}
+                    <div className={`${bgTertiary} rounded-xl border ${borderColor} p-4 backdrop-blur-sm`}>
+                        <h4 className={`text-xs font-medium ${textMuted} mb-3 uppercase tracking-wider`}>Shortcuts</h4>
+                        <div className="space-y-2 text-sm">
+                            <div className="flex justify-between items-center">
+                                <span className={textSecondary}>Next slide</span>
+                                <div className="flex gap-1">
+                                    <kbd className={`px-2 py-0.5 rounded ${isDark ? 'bg-zinc-700' : 'bg-gray-100'} ${textMuted} text-xs font-mono`}>→</kbd>
+                                    <kbd className={`px-2 py-0.5 rounded ${isDark ? 'bg-zinc-700' : 'bg-gray-100'} ${textMuted} text-xs font-mono`}>Space</kbd>
+                                </div>
                             </div>
-                            <div className="flex justify-between">
-                                <span>Previous slide</span>
-                                <span className="text-zinc-500">← / ↑</span>
+                            <div className="flex justify-between items-center">
+                                <span className={textSecondary}>Previous slide</span>
+                                <kbd className={`px-2 py-0.5 rounded ${isDark ? 'bg-zinc-700' : 'bg-gray-100'} ${textMuted} text-xs font-mono`}>←</kbd>
                             </div>
-                            <div className="flex justify-between">
-                                <span>End presentation</span>
-                                <span className="text-zinc-500">Esc</span>
+                            <div className="flex justify-between items-center">
+                                <span className={textSecondary}>End</span>
+                                <kbd className={`px-2 py-0.5 rounded ${isDark ? 'bg-zinc-700' : 'bg-gray-100'} ${textMuted} text-xs font-mono`}>Esc</kbd>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Bottom Navigation */}
-            <div className="h-20 bg-zinc-800 border-t border-zinc-700 flex items-center justify-center gap-6">
+            {/* Bottom Navigation - Refined */}
+            <div className={`h-20 ${bgSecondary} backdrop-blur-xl border-t ${borderColor} flex items-center justify-center gap-6`}>
                 <button
                     onClick={goToPrevious}
                     disabled={currentIndex === 0}
-                    className="flex items-center gap-2 bg-zinc-700 hover:bg-zinc-600 disabled:opacity-30 disabled:hover:bg-zinc-700 text-white px-6 py-3 rounded-lg font-semibold transition"
+                    className={`flex items-center gap-2 ${isDark ? 'bg-zinc-700 hover:bg-zinc-600' : 'bg-gray-200 hover:bg-gray-300'} disabled:opacity-30 disabled:cursor-not-allowed ${textPrimary} px-6 py-3 rounded-xl font-medium transition-all duration-200`}
                 >
                     <ChevronLeft size={20} />
                     Previous
@@ -454,11 +543,11 @@ const PresenterView: React.FC<PresenterViewProps> = ({ slides, startIndex, onExi
                         <button
                             key={idx}
                             onClick={() => setCurrentIndex(idx)}
-                            className={`w-2.5 h-2.5 rounded-full transition ${idx === currentIndex
+                            className={`w-2.5 h-2.5 rounded-full transition-all duration-200 ${idx === currentIndex
                                 ? 'bg-violet-500 scale-125'
                                 : idx < currentIndex
-                                    ? 'bg-violet-400/50'
-                                    : 'bg-zinc-600 hover:bg-zinc-500'
+                                    ? 'bg-violet-500/40'
+                                    : isDark ? 'bg-zinc-600 hover:bg-zinc-500' : 'bg-gray-300 hover:bg-gray-400'
                                 }`}
                         />
                     ))}
@@ -467,7 +556,7 @@ const PresenterView: React.FC<PresenterViewProps> = ({ slides, startIndex, onExi
                 <button
                     onClick={goToNext}
                     disabled={currentIndex === slides.length - 1}
-                    className="flex items-center gap-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-30 disabled:hover:bg-violet-600 text-white px-6 py-3 rounded-lg font-semibold transition"
+                    className="flex items-center gap-2 bg-violet-500 hover:bg-violet-400 disabled:opacity-30 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 shadow-lg shadow-violet-500/25"
                 >
                     Next
                     <ChevronRight size={20} />

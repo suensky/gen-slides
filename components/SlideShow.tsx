@@ -695,46 +695,48 @@ const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, to
   return (
     <div className="h-full flex flex-col bg-slate-100 dark:bg-black text-zinc-900 dark:text-white relative transition-colors">
       {/* Navbar */}
-      <div className="h-16 flex items-center justify-between px-6 border-b border-slate-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 relative z-20">
+      <div className="h-16 flex items-center gap-2 sm:gap-4 px-3 sm:px-6 border-b border-slate-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 relative z-20">
 
         {/* Left: Back + Undo/Redo */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
           <button onClick={onBack} className="p-2 hover:bg-slate-200 dark:hover:bg-zinc-800 rounded-full transition text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white" title="Back to Home">
             <ArrowLeft size={20} />
           </button>
 
-          <div className="h-6 w-px bg-slate-200 dark:bg-zinc-800 mx-2" />
+          <div className="hidden sm:flex items-center">
+            <div className="h-6 w-px bg-slate-200 dark:bg-zinc-800 mx-2" />
 
-          <button
-            onClick={handleUndo}
-            disabled={historyIndex === 0}
-            className="p-2 hover:bg-slate-200 dark:hover:bg-zinc-800 rounded-full transition text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white disabled:opacity-30 disabled:hover:bg-transparent"
-            title="Undo"
-          >
-            <Undo size={18} />
-          </button>
-          <button
-            onClick={handleRedo}
-            disabled={historyIndex === history.length - 1}
-            className="p-2 hover:bg-slate-200 dark:hover:bg-zinc-800 rounded-full transition text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white disabled:opacity-30 disabled:hover:bg-transparent"
-            title="Redo"
-          >
-            <Redo size={18} />
-          </button>
+            <button
+              onClick={handleUndo}
+              disabled={historyIndex === 0}
+              className="p-2 hover:bg-slate-200 dark:hover:bg-zinc-800 rounded-full transition text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white disabled:opacity-30 disabled:hover:bg-transparent"
+              title="Undo"
+            >
+              <Undo size={18} />
+            </button>
+            <button
+              onClick={handleRedo}
+              disabled={historyIndex === history.length - 1}
+              className="p-2 hover:bg-slate-200 dark:hover:bg-zinc-800 rounded-full transition text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white disabled:opacity-30 disabled:hover:bg-transparent"
+              title="Redo"
+            >
+              <Redo size={18} />
+            </button>
+          </div>
         </div>
 
-        {/* Center: Title & Slide Info */}
-        <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
-          <h1 className="font-semibold text-sm max-w-md truncate text-zinc-700 dark:text-zinc-200">{topic}</h1>
+        {/* Center: Title & Slide Info - uses flex-1 and min-w-0 to properly shrink */}
+        <div className="flex-1 min-w-0 flex flex-col items-center justify-center">
+          <h1 className="font-semibold text-sm truncate max-w-full text-zinc-700 dark:text-zinc-200">{topic}</h1>
           <span className="font-mono text-[10px] text-zinc-500">
             Slide {currentIndex + 1} of {slides.length}
           </span>
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
           {generatingCount > 0 && (
-            <span className="text-xs text-zinc-500 animate-pulse flex items-center gap-2 mr-2">
+            <span className="hidden sm:flex text-xs text-zinc-500 animate-pulse items-center gap-2 mr-2">
               <Loader2 size={12} className="animate-spin" />
               Processing {generatingCount}...
             </span>
@@ -742,7 +744,7 @@ const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, to
 
           <button
             onClick={() => setIsPresentMode(true)}
-            className="group flex items-center gap-2 bg-black dark:bg-white text-white dark:text-black px-5 py-2.5 rounded-full text-sm font-medium hover:opacity-90 active:scale-95 transition-all shadow-sm"
+            className="group flex items-center gap-2 bg-black dark:bg-white text-white dark:text-black px-3 sm:px-5 py-2 sm:py-2.5 rounded-full text-sm font-medium hover:opacity-90 active:scale-95 transition-all shadow-sm"
           >
             <Play size={16} className="fill-current" />
             <span className="hidden sm:inline">Present</span>
@@ -753,11 +755,11 @@ const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, to
             <button
               onClick={() => setShowExportDropdown(!showExportDropdown)}
               disabled={isExporting}
-              className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 px-5 py-2.5 rounded-full text-sm font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-95 disabled:opacity-50 disabled:active:scale-100 transition-all"
+              className="flex items-center gap-1 sm:gap-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 px-3 sm:px-5 py-2 sm:py-2.5 rounded-full text-sm font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-95 disabled:opacity-50 disabled:active:scale-100 transition-all"
             >
               {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
               <span className="hidden sm:inline">Export</span>
-              <ChevronDown size={14} className={`transition-transform ${showExportDropdown ? 'rotate-180' : ''}`} />
+              <ChevronDown size={14} className={`hidden sm:block transition-transform ${showExportDropdown ? 'rotate-180' : ''}`} />
             </button>
 
             {showExportDropdown && !isExporting && (
