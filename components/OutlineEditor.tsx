@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { ArrowLeft, Loader2, Play, Trash2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Slide, Attachment } from '../types';
 import { generateOutlineStream } from '../services/geminiService';
-import ThemeToggle from './ThemeToggle';
+
 
 interface OutlineEditorProps {
   topic: string;
@@ -115,7 +115,7 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ topic, initialAttachments
         </div>
         <div className="flex items-center gap-3">
           {isGenerating && <span className="text-xs text-purple-600 dark:text-purple-400 animate-pulse flex items-center gap-1"><Loader2 size={12} className="animate-spin" /> AI Generating...</span>}
-          <ThemeToggle />
+
         </div>
       </header>
 

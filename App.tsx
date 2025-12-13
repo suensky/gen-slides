@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import Home from './components/Home';
 import OutlineEditor from './components/OutlineEditor';
 import SlideShow from './components/SlideShow';
-import TestPage from './components/TestPage';
 import Sidebar from './components/Sidebar';
 import { Slide, ViewState, PresentationData, Attachment } from './types';
 import { getAllPresentations, savePresentation, deletePresentation } from './services/db';
@@ -89,7 +88,6 @@ const App: React.FC = () => {
         return (
           <Home
             onSubmit={handleCreateOutline}
-            onTestPage={() => setView('TEST')}
           />
         );
       case 'OUTLINE':
@@ -116,13 +114,10 @@ const App: React.FC = () => {
             }}
           />
         );
-      case 'TEST':
-        return <TestPage onBack={() => setView('HOME')} />;
       default:
         return (
           <Home
             onSubmit={handleCreateOutline}
-            onTestPage={() => setView('TEST')}
           />
         );
     }

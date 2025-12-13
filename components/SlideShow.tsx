@@ -11,7 +11,7 @@ import SlideViewer from './SlideViewer';
 import RegenerateModal from './RegenerateModal';
 import NewSlideModal from './NewSlideModal';
 import ConfirmationModal from './ConfirmationModal';
-import ThemeToggle from './ThemeToggle';
+
 import PresentationMode from './PresentationMode';
 
 interface SlideShowProps {
@@ -660,7 +660,7 @@ const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, to
               Processing {generatingCount}...
             </span>
           )}
-          <ThemeToggle />
+
           <button
             onClick={() => setIsPresentMode(true)}
             className="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:from-violet-500 hover:to-indigo-500 transition shadow-lg shadow-violet-500/25"

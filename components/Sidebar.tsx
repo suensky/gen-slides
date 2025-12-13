@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Clock, Trash2, Play, PanelLeftClose, PanelLeft, Plus, MessageSquare } from 'lucide-react';
+import { Clock, Trash2, Play, PanelLeftClose, PanelLeft, Plus, MessageSquare, Settings, Sun, Moon } from 'lucide-react';
 import { PresentationData } from '../types';
 import ConfirmationModal from './ConfirmationModal';
+import GlobalSettingsModal from './GlobalSettingsModal';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface SidebarProps {
     isCollapsed: boolean;
@@ -21,6 +23,8 @@ const Sidebar: React.FC<SidebarProps> = ({
     onNewChat
 }) => {
     const [presentationToDelete, setPresentationToDelete] = useState<string | null>(null);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const { theme, toggleTheme } = useTheme();
 
     const formatDate = (ts: number) => {
         return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
@@ -145,6 +149,41 @@ const Sidebar: React.FC<SidebarProps> = ({
                         </div>
                     )}
                 </div>
+
+                {/* Footer Controls */}
+                <div className="p-2 border-t border-slate-200 dark:border-zinc-800 space-y-1">
+                    <button
+                        onClick={toggleTheme}
+                        className={`
+                            w-full flex items-center gap-2 p-2 rounded-lg
+                            text-zinc-600 dark:text-zinc-400
+                            hover:bg-slate-200 dark:hover:bg-zinc-800
+                            hover:text-zinc-900 dark:hover:text-white
+                            transition-colors duration-200
+                            ${isCollapsed ? 'justify-center' : 'justify-start'}
+                        `}
+                        title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+                    >
+                        {theme === 'light' ? <Sun size={18} /> : <Moon size={18} />}
+                        {!isCollapsed && <span className="text-sm font-medium">{theme === 'light' ? 'Light' : 'Dark'}</span>}
+                    </button>
+
+                    <button
+                        onClick={() => setIsSettingsOpen(true)}
+                        className={`
+                            w-full flex items-center gap-2 p-2 rounded-lg
+                            text-zinc-600 dark:text-zinc-400
+                            hover:bg-slate-200 dark:hover:bg-zinc-800
+                            hover:text-zinc-900 dark:hover:text-white
+                            transition-colors duration-200
+                            ${isCollapsed ? 'justify-center' : 'justify-start'}
+                        `}
+                        title="Settings"
+                    >
+                        <Settings size={18} />
+                        {!isCollapsed && <span className="text-sm font-medium">Settings</span>}
+                    </button>
+                </div>
             </aside>
 
             <ConfirmationModal
@@ -155,6 +194,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                 isDangerous={true}
                 onClose={() => setPresentationToDelete(null)}
                 onConfirm={confirmDelete}
+            />
+
+            <GlobalSettingsModal
+                isOpen={isSettingsOpen}
+                onClose={() => setIsSettingsOpen(false)}
             />
         </>
     );

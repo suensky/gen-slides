@@ -1,13 +1,11 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { ArrowRight, Sparkles, Paperclip, File as FileIcon, Image as ImageIcon, Music, FileText, X, Settings, ChevronDown } from 'lucide-react';
 import { Attachment } from '../types';
-import ThemeToggle from './ThemeToggle';
 import ImageSettingsModal from './ImageSettingsModal';
 import { IMAGE_MODELS, ImageConfig, DEFAULT_IMAGE_CONFIG, ImageModel, AspectRatio } from '../services/geminiService';
 
 interface HomeProps {
     onSubmit: (topic: string, attachments: Attachment[], imageConfig: ImageConfig) => void;
-    onTestPage: () => void;
 }
 
 const SUGGESTIONS = [
@@ -23,7 +21,7 @@ const ALLOWED_MIME_TYPES = [
     'application/pdf'
 ];
 
-const Home: React.FC<HomeProps> = ({ onSubmit, onTestPage }) => {
+const Home: React.FC<HomeProps> = ({ onSubmit }) => {
     const [input, setInput] = useState('');
     const [attachments, setAttachments] = useState<Attachment[]>([]);
     const [isDragging, setIsDragging] = useState(false);
@@ -120,10 +118,7 @@ const Home: React.FC<HomeProps> = ({ onSubmit, onTestPage }) => {
 
     return (
         <div className="flex-1 flex flex-col items-center p-6 bg-slate-50 dark:bg-zinc-950 relative overflow-hidden h-full transition-colors">
-            {/* Theme Toggle */}
-            <div className="absolute top-6 right-6 z-20">
-                <ThemeToggle />
-            </div>
+            {/* Theme Toggle Removed */}
 
             {/* Decorative Background Elements */}
             <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-400/10 dark:bg-purple-900/20 rounded-full blur-3xl pointer-events-none" />
