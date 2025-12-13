@@ -1,0 +1,109 @@
+/* Light and Dark Theme CSS Variables */
+
+:root {
+  /* Light theme (default) */
+  --bg-primary: #fafafa;
+  --bg-secondary: #f4f4f5;
+  --bg-tertiary: #e4e4e7;
+  --bg-card: #ffffff;
+  --bg-overlay: rgba(250, 250, 250, 0.95);
+  
+  --text-primary: #18181b;
+  --text-secondary: #3f3f46;
+  --text-tertiary: #71717a;
+  --text-muted: #a1a1aa;
+  
+  --border-primary: #e4e4e7;
+  --border-secondary: #d4d4d8;
+  
+  --accent-primary: #8b5cf6;
+  --accent-secondary: #6366f1;
+  --accent-gradient-start: #8b5cf6;
+  --accent-gradient-end: #3b82f6;
+  
+  --scrollbar-track: #f4f4f5;
+  --scrollbar-thumb: #d4d4d8;
+  --scrollbar-thumb-hover: #a1a1aa;
+  
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  
+  --decorative-1: rgba(139, 92, 246, 0.15);
+  --decorative-2: rgba(59, 130, 246, 0.15);
+}
+
+.dark {
+  /* Dark theme */
+  --bg-primary: #09090b;
+  --bg-secondary: #18181b;
+  --bg-tertiary: #27272a;
+  --bg-card: #1c1c1f;
+  --bg-overlay: rgba(9, 9, 11, 0.95);
+  
+  --text-primary: #fafafa;
+  --text-secondary: #d4d4d8;
+  --text-tertiary: #a1a1aa;
+  --text-muted: #71717a;
+  
+  --border-primary: #27272a;
+  --border-secondary: #3f3f46;
+  
+  --accent-primary: #a855f7;
+  --accent-secondary: #818cf8;
+  --accent-gradient-start: #9333ea;
+  --accent-gradient-end: #3b82f6;
+  
+  --scrollbar-track: #09090b;
+  --scrollbar-thumb: #27272a;
+  --scrollbar-thumb-hover: #3f3f46;
+  
+  --shadow-color: rgba(0, 0, 0, 0.5);
+  
+  --decorative-1: rgba(126, 34, 206, 0.2);
+  --decorative-2: rgba(30, 64, 175, 0.2);
+}
+
+/* Custom scrollbar for themed look */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* Smooth transitions between themes */
+*, *::before, *::after {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.15s ease;
+}
+
+/* Disable transitions for animations */
+.animate-spin, .animate-pulse, .animate-bounce {
+  transition: none !important;
+}
+
+/* Theme utility classes */
+.theme-bg-primary { background-color: var(--bg-primary); }
+.theme-bg-secondary { background-color: var(--bg-secondary); }
+.theme-bg-tertiary { background-color: var(--bg-tertiary); }
+.theme-bg-card { background-color: var(--bg-card); }
+
+.theme-text-primary { color: var(--text-primary); }
+.theme-text-secondary { color: var(--text-secondary); }
+.theme-text-tertiary { color: var(--text-tertiary); }
+.theme-text-muted { color: var(--text-muted); }
+
+.theme-border-primary { border-color: var(--border-primary); }
+.theme-border-secondary { border-color: var(--border-secondary); }
+
+.theme-accent { color: var(--accent-primary); }
+.theme-accent-bg { background-color: var(--accent-primary); }

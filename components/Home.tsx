@@ -1,0 +1,309 @@
+import React, { useState, useRef, useCallback } from 'react';
+import { ArrowRight, Sparkles, Clock, Trash2, Play, TestTube2, Paperclip, File as FileIcon, Image as ImageIcon, Music, FileText, X } from 'lucide-react';
+import { PresentationData, Attachment } from '../types';
+import ConfirmationModal from './ConfirmationModal';
+import ThemeToggle from './ThemeToggle';
+
+interface HomeProps {
+    onSubmit: (topic: string, attachments: Attachment[]) => void;
+    history: PresentationData[];
+    onLoadHistory: (presentation: PresentationData) => void;
+    onDeleteHistory: (id: string) => void;
+    onTestPage: () => void;
+}
+
+const SUGGESTIONS = [
+    "Quantum Computing 101: Explain quantum computing to a non-technical audience, covering qubits, superposition, and real-world applications in cryptography and drug discovery",
+    "Eco-Fashion Startup: Create a compelling investor pitch for a sustainable fashion brand using recycled ocean plastics, targeting Gen-Z consumers with a subscription model",
+    "Remote Team Leadership: A comprehensive guide on managing distributed teams across time zones, building culture virtually, and preventing burnout in hybrid work environments",
+    "Sleep Science Secrets: Explore the neuroscience of sleep cycles, circadian rhythms, and evidence-based techniques for optimizing rest and boosting cognitive performance"
+];
+
+const ALLOWED_MIME_TYPES = [
+    'image/png', 'image/jpeg', 'image/webp', 'image/heic', 'image/heif',
+    'audio/wav', 'audio/mp3', 'audio/aiff', 'audio/aac', 'audio/ogg', 'audio/flac',
+    'application/pdf'
+];
+
+const Home: React.FC<HomeProps> = ({ onSubmit, history, onLoadHistory, onDeleteHistory, onTestPage }) => {
+    const [input, setInput] = useState('');
+    const [presentationToDelete, setPresentationToDelete] = useState<string | null>(null);
+    const [attachments, setAttachments] = useState<Attachment[]>([]);
+    const [isDragging, setIsDragging] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (input.trim() || attachments.length > 0) {
+            onSubmit(input, attachments);
+        }
+    };
+
+    const formatDate = (ts: number) => {
+        return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    };
+
+    const confirmDelete = () => {
+        if (presentationToDelete) {
+            onDeleteHistory(presentationToDelete);
+            setPresentationToDelete(null);
+        }
+    };
+
+    const processFile = (file: File): Promise<Attachment> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const result = reader.result as string;
+                // Remove Data URL prefix (e.g., "data:image/png;base64,")
+                const base64Data = result.split(',')[1];
+                resolve({
+                    name: file.name,
+                    mimeType: file.type,
+                    data: base64Data
+                });
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const handleFiles = async (files: FileList | null) => {
+        if (!files) return;
+
+        const newAttachments: Attachment[] = [];
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            if (ALLOWED_MIME_TYPES.some(type => file.type.match(new RegExp(type.replace('*', '.*'))))) {
+                try {
+                    const attachment = await processFile(file);
+                    newAttachments.push(attachment);
+                } catch (e) {
+                    console.error("Failed to process file", file.name, e);
+                }
+            } else {
+                alert(`File type ${file.type} not supported.`);
+            }
+        }
+        setAttachments(prev => [...prev, ...newAttachments]);
+    };
+
+    const handleDrop = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+        handleFiles(e.dataTransfer.files);
+    }, []);
+
+    const handleDragOver = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(true);
+    }, []);
+
+    const handleDragLeave = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+    }, []);
+
+    const removeAttachment = (index: number) => {
+        setAttachments(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const getFileIcon = (mimeType: string) => {
+        if (mimeType.startsWith('image/')) return <ImageIcon size={14} className="text-blue-400" />;
+        if (mimeType.startsWith('audio/')) return <Music size={14} className="text-pink-400" />;
+        if (mimeType === 'application/pdf') return <FileText size={14} className="text-red-400" />;
+        return <FileIcon size={14} className="text-zinc-400" />;
+    };
+
+    return (
+        <div className="flex-1 flex flex-col items-center p-6 bg-slate-50 dark:bg-zinc-950 relative overflow-hidden h-full transition-colors">
+            {/* Theme Toggle */}
+            <div className="absolute top-6 right-6 z-20">
+                <ThemeToggle />
+            </div>
+
+            {/* Decorative Background Elements */}
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-400/10 dark:bg-purple-900/20 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-400/10 dark:bg-blue-900/20 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="z-10 w-full max-w-4xl text-center flex flex-col h-full">
+                <div className="flex-none pt-12 space-y-6">
+                    <h1 className="text-6xl font-tracking-tighter font-bold text-zinc-900 dark:text-white mb-4">
+                        Gen Slides
+                    </h1>
+                    <p className="text-xl text-zinc-500 dark:text-zinc-400 font-light">
+                        Turn your ideas into stunning slides with <span className="text-purple-600 dark:text-purple-400 font-medium">Gen Slides</span>
+                    </p>
+
+                    <div className="w-full max-w-2xl mx-auto">
+                        <form
+                            onSubmit={handleSubmit}
+                            className="w-full relative group"
+                            onDrop={handleDrop}
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                        >
+                            <div className={`absolute inset-0 bg-gradient-to-r from-purple-500 to-blue-500 dark:from-purple-600 dark:to-blue-600 rounded-2xl blur transition duration-500 ${isDragging ? 'opacity-70' : 'opacity-25 group-hover:opacity-40'}`}></div>
+
+                            <div className={`relative bg-white dark:bg-zinc-900 border rounded-2xl p-2 flex flex-col shadow-2xl transition-colors ${isDragging ? 'border-purple-500 bg-slate-50 dark:bg-zinc-900/80' : 'border-slate-200 dark:border-zinc-800'}`}>
+
+                                {/* Attachments List */}
+                                {attachments.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 px-4 pt-4 pb-2">
+                                        {attachments.map((att, idx) => (
+                                            <div key={idx} className="flex items-center gap-2 bg-slate-100 dark:bg-zinc-800 rounded-lg pl-3 pr-2 py-1.5 border border-slate-200 dark:border-zinc-700 animate-in fade-in zoom-in duration-200">
+                                                {getFileIcon(att.mimeType)}
+                                                <span className="text-xs text-zinc-700 dark:text-zinc-200 max-w-[150px] truncate" title={att.name}>{att.name}</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeAttachment(idx)}
+                                                    className="p-1 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-full text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white transition"
+                                                >
+                                                    <X size={12} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <textarea
+                                    className="w-full bg-transparent text-lg text-zinc-800 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 p-4 min-h-[120px] outline-none resize-none"
+                                    placeholder={isDragging ? "Drop files here..." : "Describe your presentation idea, or drop images, PDFs, or audio..."}
+                                    value={input}
+                                    onChange={(e) => setInput(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+                                            handleSubmit(e);
+                                        }
+                                    }}
+                                />
+
+                                {/* Drag Overlay Text */}
+                                {isDragging && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-white/90 dark:bg-zinc-900/90 rounded-2xl z-20 pointer-events-none">
+                                        <div className="text-purple-600 dark:text-purple-400 font-medium flex flex-col items-center gap-2 animate-bounce">
+                                            <Paperclip size={32} />
+                                            <span>Drop files to attach</span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="flex justify-between items-center px-4 pb-2 border-t border-slate-200/50 dark:border-zinc-800/50 pt-3 mt-2">
+                                    <div className="flex items-center gap-3">
+                                        <input
+                                            type="file"
+                                            multiple
+                                            ref={fileInputRef}
+                                            className="hidden"
+                                            accept={ALLOWED_MIME_TYPES.join(',')}
+                                            onChange={(e) => handleFiles(e.target.files)}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white transition p-2 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg flex items-center gap-2 text-xs font-medium group/attach"
+                                        >
+                                            <Paperclip size={16} className="group-hover/attach:rotate-45 transition-transform" />
+                                            <span className="hidden sm:inline">Attach</span>
+                                        </button>
+                                        <span className="text-xs text-zinc-400 dark:text-zinc-600 flex items-center gap-1">
+                                            <Sparkles size={12} /> Powered by Gemini
+                                        </span>
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        disabled={!input.trim() && attachments.length === 0}
+                                        className="bg-zinc-900 dark:bg-white text-white dark:text-black hover:bg-zinc-700 dark:hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl p-3 transition-colors duration-200 flex items-center justify-center"
+                                    >
+                                        <ArrowRight size={20} />
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+
+                        {/* Suggestions */}
+                        <div className="flex flex-wrap justify-center gap-2 mt-4">
+                            {SUGGESTIONS.map((suggestion) => (
+                                <button
+                                    key={suggestion}
+                                    onClick={() => setInput(suggestion)}
+                                    className="px-3 py-1.5 text-xs text-zinc-600 dark:text-zinc-500 bg-slate-100 dark:bg-zinc-900/50 border border-slate-200 dark:border-zinc-800 rounded-full hover:bg-slate-200 dark:hover:bg-zinc-800 hover:text-zinc-800 dark:hover:text-zinc-300 transition cursor-pointer"
+                                >
+                                    {suggestion}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex-1 mt-10 w-full flex flex-col min-h-0">
+                    <div className="flex items-center justify-between mb-4 px-2">
+                        <h3 className="text-zinc-400 dark:text-zinc-500 text-sm font-semibold uppercase tracking-wider flex items-center gap-2">
+                            <Clock size={14} /> History
+                        </h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto pb-10 pr-2 custom-scrollbar text-left">
+                        {history.length === 0 ? (
+                            <div className="col-span-full py-12 text-center text-zinc-400 dark:text-zinc-600 border border-slate-200 dark:border-zinc-900 rounded-xl border-dashed">
+                                <p>No presentations yet. Create your first one above!</p>
+                            </div>
+                        ) : (
+                            history.sort((a, b) => b.createdAt - a.createdAt).map((deck) => (
+                                <div key={deck.id} className="group relative bg-slate-100 dark:bg-zinc-900/50 border border-slate-200 dark:border-zinc-800 rounded-xl p-4 hover:bg-slate-50 dark:hover:bg-zinc-900 hover:border-slate-300 dark:hover:border-zinc-700 transition flex flex-col h-32">
+                                    <div
+                                        onClick={() => onLoadHistory(deck)}
+                                        className="flex-1 cursor-pointer"
+                                    >
+                                        <h4 className="text-zinc-700 dark:text-zinc-200 font-medium line-clamp-2 mb-2">{deck.topic}</h4>
+                                        <span className="text-xs text-zinc-500">{formatDate(deck.createdAt)} • {deck.slides.length} slides</span>
+                                    </div>
+
+                                    <div className="flex justify-end items-center gap-2 mt-auto opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); setPresentationToDelete(deck.id); }}
+                                            className="p-1.5 text-zinc-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-slate-200 dark:hover:bg-zinc-800 rounded transition"
+                                            title="Delete"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                        <button
+                                            onClick={() => onLoadHistory(deck)}
+                                            className="p-1.5 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/20 rounded transition"
+                                            title="Open"
+                                        >
+                                            <Play size={14} />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+
+                {/* Test Link */}
+                <div className="py-4 text-center flex flex-col items-center gap-2">
+                    <button
+                        onClick={onTestPage}
+                        className="text-[10px] text-zinc-400 dark:text-zinc-700 hover:text-zinc-600 dark:hover:text-zinc-500 flex items-center gap-1 transition"
+                    >
+                        <TestTube2 size={10} /> Test Page
+                    </button>
+                </div>
+            </div>
+
+            <ConfirmationModal
+                isOpen={!!presentationToDelete}
+                title="Delete Presentation"
+                message="Are you sure you want to delete this presentation? This action cannot be undone."
+                confirmText="Delete"
+                isDangerous={true}
+                onClose={() => setPresentationToDelete(null)}
+                onConfirm={confirmDelete}
+            />
+        </div>
+    );
+};
+
+export default Home;
