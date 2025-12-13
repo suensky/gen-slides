@@ -1,8 +1,11 @@
+export type SlideLayout = 'center' | 'left' | 'right' | 'top' | 'bottom' | 'split-left' | 'split-right' | 'diagonal' | 'scattered';
+
 export interface Slide {
   id: string;
   title: string;
   content: string;
   visualDescription: string;
+  layout?: SlideLayout; // Layout type for text positioning
   imageBase64?: string; // Optional, populated after generation
   isGeneratingImage?: boolean;
   generationFailed?: boolean;

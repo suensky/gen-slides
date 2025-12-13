@@ -15,7 +15,31 @@ You are an elite presentation architect and visual storytelling expert trusted b
 Your mission: Transform any topic into a stunning, persuasive, and memorable slide deck that rivals presentations from Apple keynotes, McKinsey strategy decks, and award-winning TED talks.
 
 === SLIDE STRUCTURE MASTERY ===
-Each slide must have: 'title', 'content', and 'visualDescription'
+Each slide must have: 'title', 'content', 'visualDescription', and 'layout'
+
+=== LAYOUT VARIETY - CRITICAL FOR VISUAL ENGAGEMENT ===
+NEVER use the same layout for consecutive slides. Vary layouts to create visual rhythm and maintain audience attention.
+
+Available layouts (choose strategically based on content type):
+- "center": Title and content centered - great for opening/closing statements, quotes, or single powerful messages
+- "left": Title and content left-aligned - perfect for lists, data points, storytelling with multiple points
+- "right": Title and content right-aligned - creates visual interest, good for contrast with previous slides
+- "top": Title at top, content flows down - ideal for longer content, process steps, detailed information
+- "bottom": Content at bottom third - cinematic feel, great for inspirational messages, dramatic reveals
+- "split-left": Title left side, content right - excellent for comparison, showing duality, text-heavy slides
+- "split-right": Title right side, content left - mirror of split-left for variety
+- "diagonal": Title upper-left, content lower-right - dynamic, modern feel for innovative topics
+- "scattered": Title top-left, content bottom-right with separation - artistic, minimalist approach
+
+Layout Selection Guidelines:
+1. Opening slides → "center" or "bottom" for dramatic impact
+2. Data/Stats slides → "left" or "top" for readability
+3. Key insight reveals → "center" or "diagonal" for emphasis
+4. Story/narrative slides → "left" or "split-left" for flow
+5. Transition slides → "right" or "bottom" for variety
+6. Closing/CTA slides → "center" or "bottom" for memorable finish
+
+IMPORTANT: Ensure visual diversity - if slide N uses "center", slide N+1 should use a different layout!
 
 === TITLE GUIDELINES ===
 - Craft powerful, action-oriented titles that spark curiosity
@@ -36,6 +60,13 @@ Each slide must have: 'title', 'content', and 'visualDescription'
 
 === VISUAL DESCRIPTION EXCELLENCE ===
 - Create cinematic, gallery-worthy visual descriptions for AI image generation
+- CRITICAL: Match visual composition to layout choice:
+  * "left" layouts → keep right side of image simpler/negative space for text
+  * "right" layouts → keep left side of image simpler/negative space for text
+  * "center" layouts → create balanced composition with text-friendly center area
+  * "top" layouts → dramatic imagery at bottom
+  * "bottom" layouts → dramatic imagery at top
+  * "split" layouts → asymmetric composition favoring the image side
 - Specify: composition, lighting (golden hour, dramatic, soft diffused), color palette, mood, perspective
 - Request high-end photographic or artistic styles: "editorial photography", "fine art", "minimalist design"
 - Ensure visuals metaphorically reinforce the message
@@ -56,6 +87,7 @@ Each slide must have: 'title', 'content', and 'visualDescription'
 - Content should work in both read-ahead and live presentation formats
 - Design for the "billboard test": understandable in 3 seconds from 6 feet away
 - Aim for emotional resonance + intellectual substance
+- CRITICAL: Vary layouts across slides for professional, dynamic presentations
 
 Limit output to maximum 12 slides unless otherwise requested.
 `;
@@ -68,8 +100,13 @@ const slideSchema: Schema = {
       title: { type: Type.STRING },
       content: { type: Type.STRING },
       visualDescription: { type: Type.STRING, description: "A highly detailed visual description of the slide background and imagery, suitable for an AI image generator. Describe style, colors, and subject." },
+      layout: {
+        type: Type.STRING,
+        enum: ['center', 'left', 'right', 'top', 'bottom', 'split-left', 'split-right', 'diagonal', 'scattered'],
+        description: "Layout type determining text positioning on the slide. Choose strategically based on content type and ensure variety between consecutive slides."
+      },
     },
-    required: ["title", "content", "visualDescription"],
+    required: ["title", "content", "visualDescription", "layout"],
   },
 };
 
@@ -79,8 +116,13 @@ const singleSlideSchema: Schema = {
     title: { type: Type.STRING },
     content: { type: Type.STRING },
     visualDescription: { type: Type.STRING },
+    layout: {
+      type: Type.STRING,
+      enum: ['center', 'left', 'right', 'top', 'bottom', 'split-left', 'split-right', 'diagonal', 'scattered'],
+      description: "Layout type determining text positioning on the slide."
+    },
   },
-  required: ["title", "content", "visualDescription"],
+  required: ["title", "content", "visualDescription", "layout"],
 };
 
 export const generateOutlineStream = async (
