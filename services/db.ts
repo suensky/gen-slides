@@ -35,7 +35,7 @@ export const updateSlideImageInPresentation = async (presentationId: string, sli
   const db = await initDB();
   const tx = db.transaction(STORE_NAME, 'readwrite');
   const store = tx.objectStore(STORE_NAME);
-  
+
   const presentation = await store.get(presentationId) as PresentationData;
   if (!presentation) return;
 
@@ -44,7 +44,7 @@ export const updateSlideImageInPresentation = async (presentationId: string, sli
     presentation.slides[slideIndex].imageBase64 = imageBase64;
     await store.put(presentation);
   }
-  
+
   await tx.done;
 };
 
@@ -52,7 +52,7 @@ export const updateSlideContentInPresentation = async (presentationId: string, s
   const db = await initDB();
   const tx = db.transaction(STORE_NAME, 'readwrite');
   const store = tx.objectStore(STORE_NAME);
-  
+
   const presentation = await store.get(presentationId) as PresentationData;
   if (!presentation) return;
 
@@ -63,11 +63,34 @@ export const updateSlideContentInPresentation = async (presentationId: string, s
     if (updates.customCanvasJson !== undefined) presentation.slides[slideIndex].customCanvasJson = updates.customCanvasJson;
     await store.put(presentation);
   }
-  
+
   await tx.done;
 };
 
 export const deletePresentation = async (id: string) => {
-    const db = await initDB();
-    await db.delete(STORE_NAME, id);
+  const db = await initDB();
+  await db.delete(STORE_NAME, id);
 }
+
+// Store active presentation slides for audience window (using a special key)
+const ACTIVE_PRESENTATION_KEY = '__active_presentation__';
+
+export const setActivePresentationSlides = async (slides: any[]) => {
+  const db = await initDB();
+  await db.put(STORE_NAME, {
+    id: ACTIVE_PRESENTATION_KEY,
+    slides,
+    createdAt: Date.now()
+  });
+};
+
+export const getActivePresentationSlides = async (): Promise<any[] | null> => {
+  const db = await initDB();
+  const data = await db.get(STORE_NAME, ACTIVE_PRESENTATION_KEY);
+  return data?.slides || null;
+};
+
+export const clearActivePresentationSlides = async () => {
+  const db = await initDB();
+  await db.delete(STORE_NAME, ACTIVE_PRESENTATION_KEY);
+};

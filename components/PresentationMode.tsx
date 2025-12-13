@@ -3,11 +3,13 @@ import { ChevronLeft, ChevronRight, X, Maximize, Minimize } from 'lucide-react';
 import { Stage, Layer, Rect, Text, Image as KonvaImage } from 'react-konva';
 import useImage from 'use-image';
 import { Slide } from '../types';
+import PresenterView from './PresenterView';
 
 interface PresentationModeProps {
     slides: Slide[];
     startIndex: number;
     onExit: () => void;
+    onNotesChange?: (slideId: string, notes: string) => void;
 }
 
 const CANVAS_WIDTH = 1280;
@@ -118,7 +120,39 @@ const getLayoutObjects = (layout: string, title: string, content: string): Canva
     }
 };
 
-const PresentationMode: React.FC<PresentationModeProps> = ({ slides, startIndex, onExit }) => {
+// Detect if multiple screens are available - synchronous fallback
+const detectMultipleScreens = (): boolean => {
+    try {
+        // Method 1: Check if screen.isExtended is available (newer browsers)
+        // @ts-ignore
+        if (typeof window.screen.isExtended === 'boolean') {
+            // @ts-ignore
+            return window.screen.isExtended;
+        }
+
+        // Method 2: Heuristic - check if screen size suggests multiple monitors
+        const screenWidth = window.screen.availWidth;
+        const screenHeight = window.screen.availHeight;
+
+        // If we have a very wide screen ratio (> 2.5:1), likely multiple monitors
+        if (screenWidth / screenHeight > 2.5) {
+            return true;
+        }
+
+        // Default to single screen mode for reliability
+        return false;
+    } catch (e) {
+        console.error('Error detecting screens:', e);
+        return false;
+    }
+};
+
+// Single Screen Fullscreen Mode Component
+const SingleScreenMode: React.FC<{
+    slides: Slide[];
+    startIndex: number;
+    onExit: () => void;
+}> = ({ slides, startIndex, onExit }) => {
     const [currentIndex, setCurrentIndex] = useState(startIndex);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [showControls, setShowControls] = useState(true);
@@ -144,13 +178,10 @@ const PresentationMode: React.FC<PresentationModeProps> = ({ slides, startIndex,
 
     // Calculate scale to fit slide in viewport
     const calculateScale = useCallback(() => {
-        const padding = 0;
-        const availableWidth = dimensions.width - padding;
-        const availableHeight = dimensions.height - padding;
-
+        const availableWidth = dimensions.width;
+        const availableHeight = dimensions.height;
         const scaleX = availableWidth / CANVAS_WIDTH;
         const scaleY = availableHeight / CANVAS_HEIGHT;
-
         return Math.min(scaleX, scaleY);
     }, [dimensions]);
 
@@ -237,7 +268,6 @@ const PresentationMode: React.FC<PresentationModeProps> = ({ slides, startIndex,
         const handleFullscreenChange = () => {
             setIsFullscreen(!!document.fullscreenElement);
         };
-
         document.addEventListener('fullscreenchange', handleFullscreenChange);
         return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
     }, []);
@@ -252,7 +282,6 @@ const PresentationMode: React.FC<PresentationModeProps> = ({ slides, startIndex,
         const handleResize = () => {
             setDimensions({ width: window.innerWidth, height: window.innerHeight });
         };
-
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
@@ -374,7 +403,7 @@ const PresentationMode: React.FC<PresentationModeProps> = ({ slides, startIndex,
                 {currentIndex + 1} / {slides.length}
             </div>
 
-            {/* Navigation Zones Indicators (subtle) */}
+            {/* Navigation Zones */}
             <div
                 className={`absolute left-0 top-0 bottom-0 w-[15%] flex items-center justify-start pl-4 transition-opacity duration-300 ${showControls && currentIndex > 0 ? 'opacity-100' : 'opacity-0'}`}
                 onClick={(e) => { e.stopPropagation(); goToPrevious(); }}
@@ -442,11 +471,96 @@ const PresentationMode: React.FC<PresentationModeProps> = ({ slides, startIndex,
                 </div>
             </div>
 
-            {/* Keyboard shortcuts hint (shows briefly on mount) */}
+            {/* Keyboard shortcuts hint */}
             <div className={`absolute top-6 left-1/2 -translate-x-1/2 text-white/40 text-xs font-mono transition-opacity duration-1000 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
                 ← → Navigate • Space Next • Esc Exit • F Fullscreen
             </div>
         </div>
+    );
+};
+
+const PresentationMode: React.FC<PresentationModeProps> = ({ slides, startIndex, onExit, onNotesChange }) => {
+    const [mode, setMode] = useState<'choosing' | 'single' | 'presenter'>('choosing');
+
+    // Mode selection screen
+    if (mode === 'choosing') {
+        return (
+            <div className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center">
+                <div className="bg-zinc-900 rounded-2xl p-8 max-w-lg w-full mx-4 border border-zinc-700">
+                    <h2 className="text-2xl font-bold text-white mb-2">Start Presentation</h2>
+                    <p className="text-zinc-400 mb-6">Choose how you'd like to present:</p>
+
+                    <div className="space-y-4">
+                        {/* Single Screen Option */}
+                        <button
+                            onClick={() => setMode('single')}
+                            className="w-full p-4 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 transition text-left group"
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-lg bg-violet-600 flex items-center justify-center">
+                                    <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <rect x="2" y="3" width="20" height="14" rx="2" strokeWidth="2" />
+                                        <path d="M8 21h8M12 17v4" strokeWidth="2" />
+                                    </svg>
+                                </div>
+                                <div className="flex-1">
+                                    <div className="font-semibold text-white group-hover:text-violet-300">Single Screen</div>
+                                    <div className="text-sm text-zinc-400">Fullscreen presentation on this monitor</div>
+                                </div>
+                            </div>
+                        </button>
+
+                        {/* Presenter View Option */}
+                        <button
+                            onClick={() => setMode('presenter')}
+                            className="w-full p-4 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 transition text-left group"
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-lg bg-indigo-600 flex items-center justify-center">
+                                    <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <rect x="1" y="4" width="10" height="7" rx="1" strokeWidth="2" />
+                                        <rect x="13" y="4" width="10" height="7" rx="1" strokeWidth="2" />
+                                        <path d="M6 15v4M18 15v4M3 19h6M15 19h6" strokeWidth="2" />
+                                    </svg>
+                                </div>
+                                <div className="flex-1">
+                                    <div className="font-semibold text-white group-hover:text-indigo-300">Presenter View</div>
+                                    <div className="text-sm text-zinc-400">See notes & next slide while audience sees fullscreen</div>
+                                </div>
+                            </div>
+                        </button>
+                    </div>
+
+                    <button
+                        onClick={onExit}
+                        className="mt-6 w-full py-2 text-zinc-400 hover:text-white transition text-sm"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // Dual-screen presenter mode
+    if (mode === 'presenter') {
+        return (
+            <PresenterView
+                slides={slides}
+                startIndex={startIndex}
+                onExit={onExit}
+                onNotesChange={onNotesChange}
+            />
+        );
+    }
+
+    // Single screen fullscreen mode
+    return (
+        <SingleScreenMode
+            slides={slides}
+            startIndex={startIndex}
+            onExit={onExit}
+        />
     );
 };
 

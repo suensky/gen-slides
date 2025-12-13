@@ -5,6 +5,7 @@ export interface Slide {
   title: string;
   content: string;
   visualDescription: string;
+  speakerNotes?: string; // Notes visible only to presenter
   layout?: SlideLayout; // Layout type for text positioning
   imageBase64?: string; // Optional, populated after generation
   isGeneratingImage?: boolean;
