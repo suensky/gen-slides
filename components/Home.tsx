@@ -1,16 +1,12 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { ArrowRight, Sparkles, Clock, Trash2, Play, TestTube2, Paperclip, File as FileIcon, Image as ImageIcon, Music, FileText, X, Settings, ChevronDown } from 'lucide-react';
-import { PresentationData, Attachment } from '../types';
-import ConfirmationModal from './ConfirmationModal';
+import { ArrowRight, Sparkles, Paperclip, File as FileIcon, Image as ImageIcon, Music, FileText, X, Settings, ChevronDown } from 'lucide-react';
+import { Attachment } from '../types';
 import ThemeToggle from './ThemeToggle';
 import ImageSettingsModal from './ImageSettingsModal';
-import { IMAGE_MODELS, ASPECT_RATIOS, ImageConfig, DEFAULT_IMAGE_CONFIG, ImageModel, AspectRatio } from '../services/geminiService';
+import { IMAGE_MODELS, ImageConfig, DEFAULT_IMAGE_CONFIG, ImageModel, AspectRatio } from '../services/geminiService';
 
 interface HomeProps {
     onSubmit: (topic: string, attachments: Attachment[], imageConfig: ImageConfig) => void;
-    history: PresentationData[];
-    onLoadHistory: (presentation: PresentationData) => void;
-    onDeleteHistory: (id: string) => void;
     onTestPage: () => void;
 }
 
@@ -27,9 +23,8 @@ const ALLOWED_MIME_TYPES = [
     'application/pdf'
 ];
 
-const Home: React.FC<HomeProps> = ({ onSubmit, history, onLoadHistory, onDeleteHistory, onTestPage }) => {
+const Home: React.FC<HomeProps> = ({ onSubmit, onTestPage }) => {
     const [input, setInput] = useState('');
-    const [presentationToDelete, setPresentationToDelete] = useState<string | null>(null);
     const [attachments, setAttachments] = useState<Attachment[]>([]);
     const [isDragging, setIsDragging] = useState(false);
     const [imageConfig, setImageConfig] = useState<ImageConfig>(DEFAULT_IMAGE_CONFIG);
@@ -40,17 +35,6 @@ const Home: React.FC<HomeProps> = ({ onSubmit, history, onLoadHistory, onDeleteH
         e.preventDefault();
         if (input.trim() || attachments.length > 0) {
             onSubmit(input, attachments, imageConfig);
-        }
-    };
-
-    const formatDate = (ts: number) => {
-        return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-    };
-
-    const confirmDelete = () => {
-        if (presentationToDelete) {
-            onDeleteHistory(presentationToDelete);
-            setPresentationToDelete(null);
         }
     };
 
@@ -294,51 +278,6 @@ const Home: React.FC<HomeProps> = ({ onSubmit, history, onLoadHistory, onDeleteH
                     </div>
                 </div>
 
-                <div className="flex-1 mt-10 w-full flex flex-col min-h-0">
-                    <div className="flex items-center justify-between mb-4 px-2">
-                        <h3 className="text-zinc-400 dark:text-zinc-500 text-sm font-semibold uppercase tracking-wider flex items-center gap-2">
-                            <Clock size={14} /> History
-                        </h3>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto pb-10 pr-2 custom-scrollbar text-left">
-                        {history.length === 0 ? (
-                            <div className="col-span-full py-12 text-center text-zinc-400 dark:text-zinc-600 border border-slate-200 dark:border-zinc-900 rounded-xl border-dashed">
-                                <p>No presentations yet. Create your first one above!</p>
-                            </div>
-                        ) : (
-                            history.sort((a, b) => b.createdAt - a.createdAt).map((deck) => (
-                                <div key={deck.id} className="group relative bg-slate-100 dark:bg-zinc-900/50 border border-slate-200 dark:border-zinc-800 rounded-xl p-4 hover:bg-slate-50 dark:hover:bg-zinc-900 hover:border-slate-300 dark:hover:border-zinc-700 transition flex flex-col h-32">
-                                    <div
-                                        onClick={() => onLoadHistory(deck)}
-                                        className="flex-1 cursor-pointer"
-                                    >
-                                        <h4 className="text-zinc-700 dark:text-zinc-200 font-medium line-clamp-2 mb-2">{deck.topic}</h4>
-                                        <span className="text-xs text-zinc-500">{formatDate(deck.createdAt)} • {deck.slides.length} slides</span>
-                                    </div>
-
-                                    <div className="flex justify-end items-center gap-2 mt-auto opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); setPresentationToDelete(deck.id); }}
-                                            className="p-1.5 text-zinc-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-slate-200 dark:hover:bg-zinc-800 rounded transition"
-                                            title="Delete"
-                                        >
-                                            <Trash2 size={14} />
-                                        </button>
-                                        <button
-                                            onClick={() => onLoadHistory(deck)}
-                                            className="p-1.5 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/20 rounded transition"
-                                            title="Open"
-                                        >
-                                            <Play size={14} />
-                                        </button>
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                </div>
-
                 {/* Footer */}
                 <div className="absolute bottom-4 left-0 right-0 text-center">
                     <span className="text-[10px] text-zinc-400/60 dark:text-zinc-600/60 flex items-center justify-center gap-1">
@@ -346,16 +285,6 @@ const Home: React.FC<HomeProps> = ({ onSubmit, history, onLoadHistory, onDeleteH
                     </span>
                 </div>
             </div>
-
-            <ConfirmationModal
-                isOpen={!!presentationToDelete}
-                title="Delete Presentation"
-                message="Are you sure you want to delete this presentation? This action cannot be undone."
-                confirmText="Delete"
-                isDangerous={true}
-                onClose={() => setPresentationToDelete(null)}
-                onConfirm={confirmDelete}
-            />
 
             <ImageSettingsModal
                 isOpen={showImageSettingsModal}

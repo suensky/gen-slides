@@ -3,6 +3,7 @@ import Home from './components/Home';
 import OutlineEditor from './components/OutlineEditor';
 import SlideShow from './components/SlideShow';
 import TestPage from './components/TestPage';
+import Sidebar from './components/Sidebar';
 import { Slide, ViewState, PresentationData, Attachment } from './types';
 import { getAllPresentations, savePresentation, deletePresentation } from './services/db';
 import { ImageConfig, DEFAULT_IMAGE_CONFIG } from './services/geminiService';
@@ -11,6 +12,7 @@ const App: React.FC = () => {
   const [view, setView] = useState<ViewState>('HOME');
   const [currentPresentation, setCurrentPresentation] = useState<PresentationData | null>(null);
   const [history, setHistory] = useState<PresentationData[]>([]);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   // Temporary state to pass attachments to outline editor
   const [tempAttachments, setTempAttachments] = useState<Attachment[]>([]);
@@ -76,15 +78,17 @@ const App: React.FC = () => {
     loadHistory();
   }
 
+  const handleNewChat = () => {
+    setCurrentPresentation(null);
+    setView('HOME');
+  };
+
   const renderView = () => {
     switch (view) {
       case 'HOME':
         return (
           <Home
             onSubmit={handleCreateOutline}
-            history={history}
-            onLoadHistory={handleLoadHistory}
-            onDeleteHistory={handleDeleteHistory}
             onTestPage={() => setView('TEST')}
           />
         );
@@ -101,6 +105,7 @@ const App: React.FC = () => {
         if (!currentPresentation) return null;
         return (
           <SlideShow
+            key={currentPresentation.id}
             topic={currentPresentation.topic}
             slides={currentPresentation.slides}
             presentationId={currentPresentation.id}
@@ -117,9 +122,6 @@ const App: React.FC = () => {
         return (
           <Home
             onSubmit={handleCreateOutline}
-            history={history}
-            onLoadHistory={handleLoadHistory}
-            onDeleteHistory={handleDeleteHistory}
             onTestPage={() => setView('TEST')}
           />
         );
@@ -127,8 +129,18 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="h-full w-full">
-      {renderView()}
+    <div className="h-full w-full flex">
+      <Sidebar
+        isCollapsed={isSidebarCollapsed}
+        onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        history={history}
+        onLoadHistory={handleLoadHistory}
+        onDeleteHistory={handleDeleteHistory}
+        onNewChat={handleNewChat}
+      />
+      <main className="flex-1 overflow-hidden">
+        {renderView()}
+      </main>
     </div>
   );
 };
