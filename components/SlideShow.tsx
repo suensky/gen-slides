@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { ArrowLeft, Download, Loader2, Undo, Redo, Play } from 'lucide-react';
+import { ArrowLeft, Download, Loader2, Undo, Redo, Play, ChevronDown, FileText, Presentation } from 'lucide-react';
+import jsPDF from 'jspdf';
 import pptxgen from 'pptxgenjs';
 import { Slide } from '../types';
 import { generateSlideImage, generateSingleSlide, ImageConfig } from '../services/geminiService';
@@ -44,6 +45,8 @@ const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, to
   const [currentIndex, setCurrentIndex] = useState(0);
   const [generatingCount, setGeneratingCount] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const exportDropdownRef = useRef<HTMLDivElement>(null);
 
   // History for Undo/Redo
   const [history, setHistory] = useState<Slide[][]>([initialSlides]);
@@ -89,6 +92,17 @@ const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, to
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [slides.length]);
+
+  // Click outside to close export dropdown
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (exportDropdownRef.current && !exportDropdownRef.current.contains(e.target as Node)) {
+        setShowExportDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // --- History Management ---
 
@@ -407,6 +421,71 @@ const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, to
       alert("Could not generate PowerPoint file. See console for details.");
     } finally {
       setIsExporting(false);
+      setShowExportDropdown(false);
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    setIsExporting(true);
+    try {
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'px',
+        format: [1280, 720]
+      });
+
+      for (let i = 0; i < slides.length; i++) {
+        if (i > 0) {
+          pdf.addPage([1280, 720], 'landscape');
+        }
+
+        const slide = slides[i];
+
+        // Add black background
+        pdf.setFillColor(0, 0, 0);
+        pdf.rect(0, 0, 1280, 720, 'F');
+
+        // Add slide image if exists
+        if (slide.imageBase64) {
+          try {
+            pdf.addImage(
+              `data:image/png;base64,${slide.imageBase64}`,
+              'PNG',
+              0, 0, 1280, 720
+            );
+
+            // Add dark overlay for text readability
+            pdf.setFillColor(0, 0, 0);
+            pdf.setGState(new (pdf as any).GState({ opacity: 0.4 }));
+            pdf.rect(0, 0, 1280, 720, 'F');
+            pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
+          } catch (imgError) {
+            console.warn('Failed to add image to PDF:', imgError);
+          }
+        }
+
+        // Add text
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(48);
+        const titleLines = pdf.splitTextToSize(slide.title, 1100);
+        pdf.text(titleLines, 640, 300, { align: 'center' });
+
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(24);
+        const contentLines = pdf.splitTextToSize(slide.content, 1000);
+        pdf.text(contentLines, 640, 420, { align: 'center' });
+      }
+
+      const safeFileName = topic.replace(/[^a-z0-9]/gi, '_').substring(0, 30);
+      pdf.save(`${safeFileName}.pdf`);
+
+    } catch (error) {
+      console.error('Failed to generate PDF', error);
+      alert('Could not generate PDF file. See console for details.');
+    } finally {
+      setIsExporting(false);
+      setShowExportDropdown(false);
     }
   };
 
@@ -669,14 +748,37 @@ const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, to
             <span className="hidden sm:inline">Present</span>
           </button>
 
-          <button
-            onClick={handleDownloadPPTX}
-            disabled={isExporting}
-            className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 px-5 py-2.5 rounded-full text-sm font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-95 disabled:opacity-50 disabled:active:scale-100 transition-all"
-          >
-            {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-            <span className="hidden sm:inline">Export</span>
-          </button>
+          {/* Export Dropdown */}
+          <div className="relative" ref={exportDropdownRef}>
+            <button
+              onClick={() => setShowExportDropdown(!showExportDropdown)}
+              disabled={isExporting}
+              className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 px-5 py-2.5 rounded-full text-sm font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-95 disabled:opacity-50 disabled:active:scale-100 transition-all"
+            >
+              {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+              <span className="hidden sm:inline">Export</span>
+              <ChevronDown size={14} className={`transition-transform ${showExportDropdown ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showExportDropdown && !isExporting && (
+              <div className="absolute right-0 mt-2 w-44 bg-white dark:bg-zinc-900 rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-700 py-1 z-50 overflow-hidden">
+                <button
+                  onClick={handleDownloadPDF}
+                  className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                >
+                  <FileText size={16} className="text-rose-500" />
+                  <span>Export as PDF</span>
+                </button>
+                <button
+                  onClick={handleDownloadPPTX}
+                  className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                >
+                  <Presentation size={16} className="text-orange-500" />
+                  <span>Export as PPTX</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
