@@ -48,7 +48,7 @@ export const updateSlideImageInPresentation = async (presentationId: string, sli
   await tx.done;
 };
 
-export const updateSlideContentInPresentation = async (presentationId: string, slideId: string, updates: { title?: string, content?: string, customCanvasJson?: string }) => {
+export const updateSlideContentInPresentation = async (presentationId: string, slideId: string, updates: { title?: string, content?: string, customCanvasJson?: string, speakerNotes?: string }) => {
   const db = await initDB();
   const tx = db.transaction(STORE_NAME, 'readwrite');
   const store = tx.objectStore(STORE_NAME);
@@ -61,6 +61,7 @@ export const updateSlideContentInPresentation = async (presentationId: string, s
     if (updates.title !== undefined) presentation.slides[slideIndex].title = updates.title;
     if (updates.content !== undefined) presentation.slides[slideIndex].content = updates.content;
     if (updates.customCanvasJson !== undefined) presentation.slides[slideIndex].customCanvasJson = updates.customCanvasJson;
+    if (updates.speakerNotes !== undefined) presentation.slides[slideIndex].speakerNotes = updates.speakerNotes;
     await store.put(presentation);
   }
 

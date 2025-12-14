@@ -497,12 +497,24 @@ const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, to
     }
   };
 
-  const handleTextChange = (field: 'title' | 'content', value: string) => {
+  const handleTextChange = (field: 'title' | 'content' | 'speakerNotes', value: string) => {
     setSlides(prev => {
       const newSlides = [...prev];
       newSlides[currentIndex] = { ...newSlides[currentIndex], [field]: value };
       return newSlides;
     });
+  };
+
+  const handleNotesChange = (slideId: string, notes: string) => {
+    setSlides(prev => prev.map(s => {
+      if (s.id === slideId) return { ...s, speakerNotes: notes };
+      return s;
+    }));
+
+    // Update DB
+    updateSlideContentInPresentation(presentationId, slideId, {
+      speakerNotes: notes
+    }).catch(err => console.error("Failed to save note changes", err));
   };
 
   const handleCanvasChange = (json: string) => {
@@ -522,7 +534,8 @@ const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, to
     const hasChanged = currentInHistory && (
       slide.title !== currentInHistory.title ||
       slide.content !== currentInHistory.content ||
-      slide.customCanvasJson !== currentInHistory.customCanvasJson
+      slide.customCanvasJson !== currentInHistory.customCanvasJson ||
+      slide.speakerNotes !== currentInHistory.speakerNotes
     );
 
     if (hasChanged) {
@@ -530,7 +543,8 @@ const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, to
       updateSlideContentInPresentation(presentationId, slide.id, {
         title: slide.title,
         content: slide.content,
-        customCanvasJson: slide.customCanvasJson
+        customCanvasJson: slide.customCanvasJson,
+        speakerNotes: slide.speakerNotes
       }).catch(err => console.error("Failed to save text changes", err));
     }
   };
@@ -939,6 +953,7 @@ const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, to
           slides={slides}
           startIndex={currentIndex}
           onExit={() => setIsPresentMode(false)}
+          onNotesChange={handleNotesChange}
         />
       )}
 

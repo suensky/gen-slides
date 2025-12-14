@@ -114,8 +114,8 @@ const SlidePreview: React.FC<{ slide: Slide; scale: number; label?: string; isNe
     return (
         <div
             className={`relative rounded-xl overflow-hidden shadow-2xl transition-all duration-200 ${isNext
-                    ? isDark ? 'ring-1 ring-white/10' : 'ring-1 ring-black/10'
-                    : 'ring-2 ring-violet-500/70'
+                ? isDark ? 'ring-1 ring-white/10' : 'ring-1 ring-black/10'
+                : 'ring-2 ring-violet-500/70'
                 }`}
             style={{
                 boxShadow: isDark
@@ -126,8 +126,8 @@ const SlidePreview: React.FC<{ slide: Slide; scale: number; label?: string; isNe
             {label && (
                 <div
                     className={`absolute top-0 left-0 right-0 z-10 px-4 py-2 text-xs font-medium backdrop-blur-md ${isNext
-                            ? isDark ? 'bg-white/5 text-white/70' : 'bg-black/5 text-black/70'
-                            : 'bg-violet-500/90 text-white'
+                        ? isDark ? 'bg-white/5 text-white/70' : 'bg-black/5 text-black/70'
+                        : 'bg-violet-500/90 text-white'
                         }`}
                 >
                     {label}
@@ -337,7 +337,10 @@ const PresenterView: React.FC<PresenterViewProps> = ({ slides, startIndex, onExi
     // Handle notes change
     const handleNotesChange = (notes: string) => {
         setLocalNotes(prev => ({ ...prev, [currentSlide.id]: notes }));
-        onNotesChange?.(currentSlide.id, notes);
+    };
+
+    const handleNotesBlur = () => {
+        onNotesChange?.(currentSlide.id, localNotes[currentSlide.id] || '');
     };
 
     // Exit presentation
@@ -474,6 +477,7 @@ const PresenterView: React.FC<PresenterViewProps> = ({ slides, startIndex, onExi
                         <textarea
                             value={localNotes[currentSlide.id] || ''}
                             onChange={(e) => handleNotesChange(e.target.value)}
+                            onBlur={handleNotesBlur}
                             placeholder="Add your speaker notes here..."
                             className={`flex-1 bg-transparent ${textPrimary} p-4 resize-none focus:outline-none text-sm leading-relaxed placeholder:${textMuted}`}
                         />

@@ -416,3 +416,42 @@ export const generateThemedBackground = async (
     return "";
   }
 };
+
+export const enhanceSpeakerNotes = async (
+  notes: string,
+  mode: 'enhance' | 'simplify' | 'natural' | 'translate',
+  targetLanguage?: string
+): Promise<string> => {
+  try {
+    const prompt = `
+      Act as a professional presentation coach and speechwriter.
+      Your task is to improve the following speaker notes based on the requested mode.
+
+      Original Notes: "${notes}"
+
+      Mode: ${mode}
+      ${mode === 'translate' ? `Target Language: ${targetLanguage}` : ''}
+
+      Instructions:
+      - enhance: Make the notes richer, more descriptive, and professional, but keep them concise enough for a speaker to glance at. Add cues for emphasis or pauses if appropriate.
+      - simplify: Make the notes concise, bulleted, and easy to read quickly. Remove unnecessary fluff.
+      - natural: Rewrite the notes as if a person is naturally speaking them. Use conversational tone, rhetorical questions, and engaging language.
+      - translate: Translate the notes accurately to ${targetLanguage}. Maintain the original tone and context.
+
+      Return ONLY the improved notes text. Do not include any explanations or conversational filler.
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-pro',
+      contents: prompt,
+    });
+
+    const text = response.text;
+    if (!text) throw new Error("No response text");
+
+    return text.trim();
+  } catch (error) {
+    console.error("Error enhancing speaker notes:", error);
+    throw error;
+  }
+};

@@ -2,12 +2,13 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
     ChevronLeft, ChevronRight, Square, RefreshCw, Trash2, MousePointer2,
     Loader2, AlertCircle, Undo, Redo, Type, Bold, Italic, Underline,
-    Palette, Plus, Minus, AlignLeft, AlignCenter, AlignRight
+    Palette, Plus, Minus, AlignLeft, AlignCenter, AlignRight, Sparkles, Wand2, ChevronDown
 } from 'lucide-react';
 import { Stage, Layer, Rect, Text, Image as KonvaImage, Transformer } from 'react-konva';
 import useImage from 'use-image';
 import Konva from 'konva';
 import { Slide } from '../types';
+import { enhanceSpeakerNotes } from '../services/geminiService';
 
 interface SlideViewerProps {
     slide: Slide;
@@ -20,7 +21,7 @@ interface SlideViewerProps {
     onRetry: () => void;
     onIgnore: () => void;
     onOpenRegenerateModal: () => void;
-    onTextChange: (field: 'title' | 'content', value: string) => void;
+    onTextChange: (field: 'title' | 'content' | 'speakerNotes', value: string) => void;
     onCanvasChange: (json: string) => void;
     onTextBlur: () => void;
 }
@@ -118,6 +119,42 @@ const SlideViewer: React.FC<SlideViewerProps> = ({
     // Undo/Redo
     const [history, setHistory] = useState<string[]>([]);
     const [historyIndex, setHistoryIndex] = useState(-1);
+
+    // Speaker Notes AI State
+    const [showAiDropdown, setShowAiDropdown] = useState(false);
+    const [isEnhancing, setIsEnhancing] = useState(false);
+    const aiDropdownRef = useRef<HTMLDivElement>(null);
+
+    // AI Enhance Handler
+    const handleEnhanceNotes = async (mode: 'enhance' | 'simplify' | 'natural' | 'translate', lang?: string) => {
+        if (!slide.speakerNotes?.trim()) return;
+        setIsEnhancing(true);
+        setShowAiDropdown(false);
+        try {
+            const enhanced = await enhanceSpeakerNotes(slide.speakerNotes, mode, lang);
+            onTextChange('speakerNotes', enhanced);
+            // We need to trigger a save, similar to blur. 
+            // Since this is async, we can just call onTextBlur after update.
+            // Using setTimeout to ensure state update propagates if needed, though react state batching might handle it.
+            setTimeout(() => onTextBlur(), 100);
+        } catch (e) {
+            console.error("Failed to enhance notes", e);
+            alert("Failed to enhance notes. Please try again.");
+        } finally {
+            setIsEnhancing(false);
+        }
+    };
+
+    // Close dropdown on click outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (aiDropdownRef.current && !aiDropdownRef.current.contains(event.target as Node)) {
+                setShowAiDropdown(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     // --- Initialize / Load Slide Data ---
     useEffect(() => {
@@ -1097,6 +1134,78 @@ const SlideViewer: React.FC<SlideViewerProps> = ({
                         <span>Add Text</span>
                     </button>
                 </div>
+            </div>
+
+            {/* Speaker Notes Section */}
+            <div className="h-48 border-t border-slate-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-col z-30 relative shrink-0 transition-colors">
+                <div className="flex items-center justify-between px-4 py-2 border-b border-slate-100 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900/50">
+                    <span className="text-xs font-semibold text-slate-500 dark:text-zinc-500 uppercase tracking-wider">Speaker Notes</span>
+
+                    {/* AI Button */}
+                    <div className="relative" ref={aiDropdownRef}>
+                        <button
+                            onClick={() => setShowAiDropdown(!showAiDropdown)}
+                            disabled={isEnhancing || !slide.speakerNotes?.trim()}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${isEnhancing
+                                    ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
+                                    : 'bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-400 hover:to-indigo-400 text-white shadow-md shadow-purple-500/20 disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed'
+                                }`}
+                        >
+                            {isEnhancing ? (
+                                <>
+                                    <Loader2 size={12} className="animate-spin" />
+                                    <span>Enhancing...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Sparkles size={12} />
+                                    <span>AI Enhance</span>
+                                    <ChevronDown size={12} className={`transition-transform duration-200 ${showAiDropdown ? 'rotate-180' : ''}`} />
+                                </>
+                            )}
+                        </button>
+
+                        {/* Dropdown */}
+                        {showAiDropdown && (
+                            <div className="absolute bottom-full right-0 mb-2 w-56 bg-white dark:bg-zinc-800 rounded-xl shadow-xl border border-slate-200 dark:border-zinc-700 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
+                                <div className="p-1">
+                                    <button onClick={() => handleEnhanceNotes('enhance')} className="w-full text-left px-3 py-2 text-xs hover:bg-slate-100 dark:hover:bg-zinc-700 rounded-lg flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                                        <Wand2 size={14} className="text-purple-500" />
+                                        <span>Improve Grammar & Flow</span>
+                                    </button>
+                                    <button onClick={() => handleEnhanceNotes('simplify')} className="w-full text-left px-3 py-2 text-xs hover:bg-slate-100 dark:hover:bg-zinc-700 rounded-lg flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                                        <Minus size={14} className="text-blue-500" />
+                                        <span>Simplify & Consolidate</span>
+                                    </button>
+                                    <button onClick={() => handleEnhanceNotes('natural')} className="w-full text-left px-3 py-2 text-xs hover:bg-slate-100 dark:hover:bg-zinc-700 rounded-lg flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                                        <MousePointer2 size={14} className="text-green-500" />
+                                        <span>Make Natural</span>
+                                    </button>
+
+                                    <div className="h-px bg-slate-100 dark:bg-zinc-700 my-1" />
+
+                                    <div className="px-3 py-1.5 text-[10px] font-semibold text-slate-400 uppercase">Translate To</div>
+                                    {['English', 'Chinese', 'Spanish', 'French', 'Japanese'].map(lang => (
+                                        <button
+                                            key={lang}
+                                            onClick={() => handleEnhanceNotes('translate', lang)}
+                                            className="w-full text-left px-3 py-1.5 text-xs hover:bg-slate-100 dark:hover:bg-zinc-700 rounded-lg flex items-center gap-2 text-slate-600 dark:text-slate-300"
+                                        >
+                                            <span>{lang}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+                <textarea
+                    value={slide.speakerNotes || ''}
+                    onChange={(e) => onTextChange('speakerNotes', e.target.value)}
+                    onBlur={onTextBlur}
+                    placeholder="Click to add speaker notes... (These will be visible in Presenter Mode)"
+                    className="flex-1 w-full p-4 bg-transparent border-none resize-none focus:outline-none focus:ring-0 text-sm leading-relaxed text-slate-700 dark:text-slate-300 placeholder:text-slate-400 dark:placeholder:text-zinc-600 font-sans"
+                />
             </div>
 
             <div className="bg-zinc-950 py-2 text-center text-xs text-zinc-500 border-t border-zinc-800 flex justify-center gap-4">
