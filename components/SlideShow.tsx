@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useLayoutEffect, useState, useRef, useCallback } from 'react';
 import { ArrowLeft, Download, Loader2, Undo, Redo, Play, ChevronDown, FileText, Presentation, Palette } from 'lucide-react';
 import jsPDF from 'jspdf';
 import pptxgen from 'pptxgenjs';
@@ -50,6 +50,7 @@ const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, to
   const [isExporting, setIsExporting] = useState(false);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const exportDropdownRef = useRef<HTMLDivElement>(null);
+  const [isDeckSwitching, setIsDeckSwitching] = useState(false);
 
   // History for Undo/Redo
   const [history, setHistory] = useState<Slide[][]>([initialSlides]);
@@ -78,6 +79,45 @@ const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, to
 
   const generatedRef = useRef<Set<string>>(new Set());
   const abortedRef = useRef<Set<string>>(new Set());
+
+  // When switching to a different presentation, reset internal state without remounting
+  // so the Konva canvas doesn't briefly clear ("flash").
+  useLayoutEffect(() => {
+    setIsDeckSwitching(true);
+    setSlides(initialSlides);
+    setCurrentIndex(0);
+    setGeneratingCount(0);
+
+    setHistory([initialSlides]);
+    setHistoryIndex(0);
+
+    imageCache.current = {};
+    initialSlides.forEach(s => {
+      if (s.imageBase64) {
+        imageCache.current[s.id] = s.imageBase64;
+      }
+    });
+
+    generatedRef.current = new Set();
+    abortedRef.current = new Set();
+
+    setShowExportDropdown(false);
+    setShowPromptModal(false);
+    setSlideToDelete(null);
+    setShowNewSlideModal(false);
+    setIsPresentMode(false);
+    setIsCreatingSlide(false);
+
+    setShowThemePanel(false);
+    setSelectedThemeId(initialThemeId || null);
+    setIsApplyingTheme(false);
+  }, [presentationId]);
+
+  useEffect(() => {
+    if (!isDeckSwitching) return;
+    const t = window.setTimeout(() => setIsDeckSwitching(false), 180);
+    return () => window.clearTimeout(t);
+  }, [isDeckSwitching]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -871,9 +911,13 @@ const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, to
 
         <div className="flex-1 flex overflow-hidden">
           {/* Slide Viewer with Theme Toggle Button */}
-          <div className="flex-1 min-w-0 relative overflow-hidden flex flex-col">
-            <SlideViewer
-              slide={currentSlide}
+	        <div className="flex-1 min-w-0 relative overflow-hidden flex flex-col">
+            <div
+              className={`pointer-events-none absolute inset-0 z-40 bg-slate-100 dark:bg-black transition-opacity duration-200 ${isDeckSwitching ? 'opacity-100' : 'opacity-0'
+                }`}
+            />
+	            <SlideViewer
+	              slide={currentSlide}
               isFirst={currentIndex === 0}
               isLast={currentIndex === slides.length - 1}
               onPrev={() => setCurrentIndex(c => Math.max(0, c - 1))}

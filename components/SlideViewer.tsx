@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react';
 import {
     ChevronLeft, ChevronRight, Square, RefreshCw, Trash2, MousePointer2,
     Loader2, AlertCircle, Undo, Redo, Type, Bold, Italic, Underline,
@@ -172,29 +172,46 @@ const SlideViewer: React.FC<SlideViewerProps> = ({
     }, []);
 
     // --- Initialize / Load Slide Data ---
-    useEffect(() => {
+    // Use layout effect to avoid a paint with the previous slide's canvas (visible "flash").
+    useLayoutEffect(() => {
         // Reset selection when switching slides
         setSelectedId(null);
         setEditingId(null);
 
-        // We only initialize when slide.id changes to avoid overwriting current editing state 
+        const syncFieldText = (objs: CanvasObject[]) =>
+            objs.map(obj => {
+                if (obj.type !== 'text' || !obj.field) return obj;
+                if (obj.field === 'title') return { ...obj, text: slide.title };
+                if (obj.field === 'content') return { ...obj, text: slide.content };
+                return obj;
+            });
+
+        // We only initialize when slide.id changes to avoid overwriting current editing state
         // when parent passes back updated customCanvasJson during drag operations.
         if (slide.customCanvasJson) {
             try {
-                const savedObjects = JSON.parse(slide.customCanvasJson);
+                const savedObjects = syncFieldText(JSON.parse(slide.customCanvasJson));
+                const json = JSON.stringify(savedObjects);
                 setObjects(savedObjects);
                 // Reset history when switching slides
-                setHistory([slide.customCanvasJson]);
+                setHistory([json]);
                 setHistoryIndex(0);
             } catch (e) {
                 console.error("Failed to parse canvas JSON", e);
+                const layout = slide.layout || 'center';
+                const fallbackObjects = syncFieldText(getLayoutObjects(layout, slide.title, slide.content));
+                const json = JSON.stringify(fallbackObjects);
+                setObjects(fallbackObjects);
+                setHistory([json]);
+                setHistoryIndex(0);
             }
         } else {
             // Dynamic Layout Templates based on slide.layout
             const layout = slide.layout || 'center';
-            const defaultObjects = getLayoutObjects(layout, slide.title, slide.content);
+            const defaultObjects = syncFieldText(getLayoutObjects(layout, slide.title, slide.content));
+            const json = JSON.stringify(defaultObjects);
             setObjects(defaultObjects);
-            setHistory([JSON.stringify(defaultObjects)]);
+            setHistory([json]);
             setHistoryIndex(0);
         }
     }, [slide.id]);

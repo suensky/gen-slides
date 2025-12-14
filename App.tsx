@@ -104,7 +104,6 @@ const App: React.FC = () => {
         if (!currentPresentation) return null;
         return (
           <SlideShow
-            key={currentPresentation.id}
             topic={currentPresentation.topic}
             slides={currentPresentation.slides}
             presentationId={currentPresentation.id}
