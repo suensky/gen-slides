@@ -44,3 +44,28 @@ out
 __pycache__/
 *.pyc
 .venv/
+backend/.venv/
+backend/venv/
+backend/env/
+backend/.env/
+
+# Python tooling caches (backend)
+backend/.pytest_cache/
+backend/.mypy_cache/
+backend/.ruff_cache/
+backend/.pytype/
+backend/.pyright/
+backend/.hypothesis/
+backend/.tox/
+backend/.nox/
+backend/.cache/
+
+# Python test/coverage artifacts (backend)
+backend/.coverage
+backend/coverage.xml
+backend/htmlcov/
+
+# Python build artifacts (backend)
+backend/build/
+backend/dist/
+backend/*.egg-info/
