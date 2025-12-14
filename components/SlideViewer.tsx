@@ -462,22 +462,38 @@ const SlideViewer: React.FC<SlideViewerProps> = ({
             const containerW = containerRef.current.clientWidth;
             const containerH = containerRef.current.clientHeight;
 
-            const scaleW = (containerW - 40) / CANVAS_WIDTH;
-            const scaleH = (containerH - 120) / CANVAS_HEIGHT;
+            // Reserve space: 80px horizontal for nav buttons
+            // Reserve 160px vertical: 88px for bottom toolbar (64px height + 24px bottom offset) + top padding
+            const scaleW = (containerW - 80) / CANVAS_WIDTH;
+            const scaleH = (containerH - 160) / CANVAS_HEIGHT;
 
             const newScale = Math.max(0.1, Math.min(scaleW, scaleH));
             setScale(newScale);
 
-            // Center logic
+            // Center logic remains the same - handled by Flexbox parent
             setPosition({
                 x: (containerW - CANVAS_WIDTH * newScale) / 2,
                 y: (containerH - CANVAS_HEIGHT * newScale) / 2
             });
         };
 
+        // Use ResizeObserver to detect container size changes (e.g., when theme panel opens/closes)
+        const resizeObserver = new ResizeObserver(() => {
+            // Small delay to ensure layout has settled
+            requestAnimationFrame(fitStage);
+        });
+
+        if (containerRef.current) {
+            resizeObserver.observe(containerRef.current);
+        }
+
         window.addEventListener('resize', fitStage);
         fitStage();
-        return () => window.removeEventListener('resize', fitStage);
+
+        return () => {
+            resizeObserver.disconnect();
+            window.removeEventListener('resize', fitStage);
+        };
     }, []);
 
     // --- History Management ---
@@ -744,7 +760,7 @@ const SlideViewer: React.FC<SlideViewerProps> = ({
         <div className="flex-1 bg-slate-200 dark:bg-zinc-900/50 flex flex-col relative overflow-hidden">
             {/* Slide Viewer Container */}
             <div
-                className="flex-1 flex items-center justify-center relative bg-slate-300 dark:bg-zinc-950 pb-16"
+                className="flex-1 flex items-center justify-center relative bg-slate-300 dark:bg-zinc-950"
                 ref={containerRef}
                 onMouseDown={(e) => {
                     // Deselect if clicking the background container padding

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { ArrowLeft, Download, Loader2, Undo, Redo, Play, ChevronDown, FileText, Presentation, Palette, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { ArrowLeft, Download, Loader2, Undo, Redo, Play, ChevronDown, FileText, Presentation, Palette } from 'lucide-react';
 import jsPDF from 'jspdf';
 import pptxgen from 'pptxgenjs';
 import { Slide } from '../types';
@@ -803,25 +803,6 @@ const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, to
             </span>
           )}
 
-          {/* Theme Toggle Button */}
-          <button
-            onClick={() => setShowThemePanel(!showThemePanel)}
-            className={`
-              p-2 rounded-lg transition-all flex items-center gap-1.5
-              ${showThemePanel
-                ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
-                : 'hover:bg-slate-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
-              }
-            `}
-            title={showThemePanel ? 'Close Themes' : 'Open Themes'}
-          >
-            <Palette size={18} />
-            {showThemePanel
-              ? <PanelRightClose size={14} className="hidden sm:block" />
-              : <PanelRightOpen size={14} className="hidden sm:block" />
-            }
-          </button>
-
           <button
             onClick={() => setIsPresentMode(true)}
             className="group flex items-center gap-2 bg-black dark:bg-white text-white dark:text-black px-3 sm:px-5 py-2 sm:py-2.5 rounded-full text-sm font-medium hover:opacity-90 active:scale-95 transition-all shadow-sm"
@@ -875,26 +856,41 @@ const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, to
         />
 
         <div className="flex-1 flex overflow-hidden">
-          <SlideViewer
-            key={currentSlide?.id}
-            slide={currentSlide}
-            isFirst={currentIndex === 0}
-            isLast={currentIndex === slides.length - 1}
-            onPrev={() => setCurrentIndex(c => Math.max(0, c - 1))}
-            onNext={() => setCurrentIndex(c => Math.min(slides.length - 1, c + 1))}
-            onDelete={() => requestDeleteSlide(currentIndex)}
-            onStopGeneration={handleStopGenerating}
-            onRetry={handleRetry}
-            onIgnore={handleIgnore}
-            onOpenRegenerateModal={handleOpenRegenerateModal}
-            onTextChange={handleTextChange}
-            onCanvasChange={handleCanvasChange}
-            onTextBlur={handleTextBlur}
-          />
+          {/* Slide Viewer with Theme Toggle Button */}
+          <div className="flex-1 min-w-0 relative overflow-hidden flex flex-col">
+            <SlideViewer
+              key={currentSlide?.id}
+              slide={currentSlide}
+              isFirst={currentIndex === 0}
+              isLast={currentIndex === slides.length - 1}
+              onPrev={() => setCurrentIndex(c => Math.max(0, c - 1))}
+              onNext={() => setCurrentIndex(c => Math.min(slides.length - 1, c + 1))}
+              onDelete={() => requestDeleteSlide(currentIndex)}
+              onStopGeneration={handleStopGenerating}
+              onRetry={handleRetry}
+              onIgnore={handleIgnore}
+              onOpenRegenerateModal={handleOpenRegenerateModal}
+              onTextChange={handleTextChange}
+              onCanvasChange={handleCanvasChange}
+              onTextBlur={handleTextBlur}
+            />
+
+            {/* Theme Toggle Button - positioned at top-right of slide canvas */}
+            {/* Theme Toggle Button - positioned at top-right of slide canvas */}
+            {!showThemePanel && (
+              <button
+                onClick={() => setShowThemePanel(true)}
+                className="absolute top-4 right-4 z-30 p-2.5 rounded-xl shadow-lg backdrop-blur-sm transition-all bg-white/80 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-700 hover:text-purple-600 dark:hover:text-purple-400"
+                title="Open Themes"
+              >
+                <Palette size={20} />
+              </button>
+            )}
+          </div>
 
           {/* Theme Marketplace Panel */}
           <div className={`
-            flex-none transition-all duration-300 ease-out overflow-hidden
+            flex-shrink-0 transition-all duration-300 ease-out overflow-hidden
             ${showThemePanel ? 'w-80' : 'w-0'}
           `}>
             <div className="w-80 h-full">
