@@ -46,13 +46,14 @@ const App: React.FC = () => {
   };
 
   // Called when user clicks "Generate Slides" from Outline Editor
-  const handleGenerateSlides = async (finalizedSlides: Slide[]) => {
+  const handleGenerateSlides = async (finalizedSlides: Slide[], themeId: string | null) => {
     if (!currentPresentation) return;
 
     const newPresentation: PresentationData = {
       ...currentPresentation,
       slides: finalizedSlides,
-      createdAt: Date.now()
+      createdAt: Date.now(),
+      themeId: themeId || undefined
     };
 
     // Save initial structure (without images mostly) to DB
@@ -108,6 +109,7 @@ const App: React.FC = () => {
             slides={currentPresentation.slides}
             presentationId={currentPresentation.id}
             imageConfig={imageConfig}
+            initialThemeId={currentPresentation.themeId || null}
             onBack={() => {
               loadHistory(); // Refresh history to capture any new images generated
               setView('HOME');

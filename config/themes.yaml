@@ -1,0 +1,295 @@
+# Theme Marketplace Configuration
+# Presentation themes for consistent slide backgrounds
+
+categories:
+  - id: professional
+    name: Professional
+    icon: 💼
+  - id: creative
+    name: Creative
+    icon: 🎨
+  - id: industry
+    name: Industry
+    icon: 🏢
+  - id: style
+    name: Style
+    icon: ✨
+  - id: mood
+    name: Mood
+    icon: 🌙
+
+themes:
+  # Professional Category
+  - id: tech-talk
+    name: Tech Talk
+    category: professional
+    description: Modern tech vibes with circuit patterns and neon accents
+    previewGradient: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)"
+    icon: 💻
+    promptSnippet: >
+      Modern tech aesthetic with subtle circuit board patterns,
+      dark charcoal background transitioning to deep navy,
+      electric blue and purple neon accent lights creating depth,
+      clean geometric shapes floating in space,
+      holographic and glass morphism elements,
+      soft glow effects emanating from edges,
+      professional developer conference atmosphere
+
+  - id: corporate-elite
+    name: Corporate Elite
+    category: professional
+    description: Sophisticated and authoritative for executive presentations
+    previewGradient: "linear-gradient(135deg, #1c1c1c 0%, #2d2d2d 50%, #404040 100%)"
+    icon: 🏛️
+    promptSnippet: >
+      Sophisticated corporate aesthetic,
+      deep charcoal to slate gray gradient background,
+      subtle metallic gold accent lines,
+      clean architectural elements suggesting strength,
+      professional boardroom atmosphere,
+      subtle texture like premium paper or brushed metal,
+      minimalist geometric patterns
+
+  - id: startup-pitch
+    name: Startup Pitch
+    category: professional
+    description: Energetic and innovative for venture pitches
+    previewGradient: "linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)"
+    icon: 🚀
+    promptSnippet: >
+      Energetic startup atmosphere,
+      vibrant gradient from electric purple to coral pink,
+      dynamic diagonal lines suggesting growth,
+      abstract rocket or upward motion elements,
+      modern sans-serif typography aesthetic,
+      optimistic and innovative mood,
+      clean with strategic negative space
+
+  - id: sales-champion
+    name: Sales Champion
+    category: professional
+    description: Confident and persuasive for closing deals
+    previewGradient: "linear-gradient(135deg, #2c3e50 0%, #3498db 50%, #1abc9c 100%)"
+    icon: 🏆
+    promptSnippet: >
+      Confident sales presentation atmosphere,
+      deep navy blue to teal gradient,
+      subtle upward-trending chart elements,
+      golden accent touches suggesting success,
+      professional yet approachable mood,
+      clean composition with clear focal areas,
+      conveying trust and achievement
+
+  # Creative Category
+  - id: creative-studio
+    name: Creative Studio
+    category: creative
+    description: Artistic and expressive for design presentations
+    previewGradient: "linear-gradient(135deg, #ff6b6b 0%, #feca57 50%, #48dbfb 100%)"
+    icon: 🎨
+    promptSnippet: >
+      Vibrant creative studio atmosphere,
+      bold color splashes of coral, yellow, and cyan,
+      abstract paint strokes and artistic textures,
+      creative chaos with intentional composition,
+      watercolor wash effects in background,
+      playful yet professional aesthetic,
+      artistic brush texture overlays
+
+  - id: bold-impact
+    name: Bold Impact
+    category: creative
+    description: High contrast and dramatic for maximum attention
+    previewGradient: "linear-gradient(135deg, #000000 0%, #434343 50%, #ff0844 100%)"
+    icon: ⚡
+    promptSnippet: >
+      High impact dramatic presentation,
+      stark black background with bold red accents,
+      high contrast lighting like a spotlight,
+      dramatic shadows creating depth,
+      bold geometric shapes cutting through space,
+      powerful and commanding presence,
+      minimal distractions for maximum focus
+
+  - id: artistic-vision
+    name: Artistic Vision
+    category: creative
+    description: Gallery-worthy aesthetic for creative portfolios
+    previewGradient: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 50%, #667eea 100%)"
+    icon: 🖼️
+    promptSnippet: >
+      Fine art gallery atmosphere,
+      soft cream to lavender gradient,
+      subtle canvas texture in background,
+      elegant brush stroke accents,
+      museum-quality presentation aesthetic,
+      sophisticated and cultured mood,
+      delicate gold frame accents
+
+  # Industry Category
+  - id: healthcare
+    name: Healthcare
+    category: industry
+    description: Clean and trustworthy for medical presentations
+    previewGradient: "linear-gradient(135deg, #e8f4f8 0%, #b2d8ea 50%, #5da5c7 100%)"
+    icon: 🏥
+    promptSnippet: >
+      Clean healthcare and medical atmosphere,
+      calming light blue to teal gradient,
+      subtle DNA helix or heartbeat line accents,
+      sterile yet warm hospital aesthetic,
+      trustworthy and professional mood,
+      soft glowing elements suggesting care,
+      clean white space for clarity
+
+  - id: finance
+    name: Finance
+    category: industry
+    description: Stable and trustworthy for financial presentations
+    previewGradient: "linear-gradient(135deg, #1a2a3a 0%, #2c5364 50%, #203a43 100%)"
+    icon: 📊
+    promptSnippet: >
+      Professional finance and banking atmosphere,
+      deep navy blue to dark teal gradient,
+      subtle stock chart or bar graph silhouettes,
+      metallic gold accent elements,
+      stable and trustworthy mood,
+      clean geometric patterns,
+      wealth and stability aesthetic
+
+  - id: education
+    name: Education
+    category: industry
+    description: Inspiring and approachable for learning content
+    previewGradient: "linear-gradient(135deg, #ffecd2 0%, #fcb69f 50%, #ee9ca7 100%)"
+    icon: 📚
+    promptSnippet: >
+      Warm educational atmosphere,
+      soft peach to coral gradient,
+      subtle book or lightbulb silhouettes,
+      chalkboard texture accents,
+      inspiring and approachable mood,
+      warm lighting suggesting knowledge,
+      friendly yet professional aesthetic
+
+  - id: nature-sustainability
+    name: Nature & Sustainability
+    category: industry
+    description: Organic and eco-conscious for green initiatives
+    previewGradient: "linear-gradient(135deg, #134e5e 0%, #71b280 50%, #a8e063 100%)"
+    icon: 🌿
+    promptSnippet: >
+      Natural sustainability atmosphere,
+      forest green to fresh lime gradient,
+      subtle leaf patterns and organic shapes,
+      earth tone accents,
+      environmental consciousness mood,
+      soft natural lighting like forest,
+      growth and renewal aesthetic
+
+  # Style Category
+  - id: minimalist
+    name: Minimalist
+    category: style
+    description: Clean and focused with maximum white space
+    previewGradient: "linear-gradient(135deg, #fafafa 0%, #f0f0f0 50%, #e0e0e0 100%)"
+    icon: ◻️
+    promptSnippet: >
+      Ultra minimalist presentation aesthetic,
+      pure white to soft gray gradient,
+      maximum negative space,
+      single thin accent line in charcoal,
+      zen-like calm and focus,
+      Apple-inspired simplicity,
+      clean typography-first design
+
+  - id: elegant-luxury
+    name: Elegant Luxury
+    category: style
+    description: Sophisticated and premium for high-end brands
+    previewGradient: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #b8860b 100%)"
+    icon: 💎
+    promptSnippet: >
+      Luxury brand presentation atmosphere,
+      deep black to dark charcoal background,
+      elegant gold foil accent elements,
+      subtle marble or leather texture,
+      premium and exclusive mood,
+      soft warm lighting like boutique hotel,
+      sophistication and wealth aesthetic
+
+  - id: futuristic
+    name: Futuristic
+    category: style
+    description: Cutting-edge and forward-thinking
+    previewGradient: "linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #00f5ff 100%)"
+    icon: 🔮
+    promptSnippet: >
+      Futuristic sci-fi presentation atmosphere,
+      deep space black to electric cyan gradient,
+      holographic grid lines receding to horizon,
+      neon edge lighting effects,
+      cyberpunk inspired aesthetic,
+      floating UI elements and glass panels,
+      innovation and technology mood
+
+  - id: vintage-classic
+    name: Vintage Classic
+    category: style
+    description: Timeless and nostalgic charm
+    previewGradient: "linear-gradient(135deg, #f5e6d3 0%, #d4b896 50%, #a67c52 100%)"
+    icon: 📜
+    promptSnippet: >
+      Vintage classic presentation atmosphere,
+      warm sepia to cream gradient,
+      aged paper texture overlay,
+      art deco gold accent elements,
+      timeless and nostalgic mood,
+      elegant serif typography aesthetic,
+      warm candlelight atmosphere
+
+  # Mood Category
+  - id: dark-mode-pro
+    name: Dark Mode Pro
+    category: mood
+    description: Easy on the eyes for extended viewing
+    previewGradient: "linear-gradient(135deg, #0d0d0d 0%, #1a1a1a 50%, #2d2d2d 100%)"
+    icon: 🌙
+    promptSnippet: >
+      Professional dark mode presentation,
+      true black to dark charcoal gradient,
+      subtle blue or purple ambient glow at edges,
+      easy on the eyes for extended viewing,
+      modern developer tool aesthetic,
+      clean and distraction-free,
+      night mode comfortable atmosphere
+
+  - id: light-airy
+    name: Light & Airy
+    category: mood
+    description: Bright and optimistic atmosphere
+    previewGradient: "linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #e9ecef 100%)"
+    icon: ☀️
+    promptSnippet: >
+      Light and airy presentation atmosphere,
+      pure white to soft cloud gray gradient,
+      subtle soft shadow elements,
+      bright and optimistic mood,
+      clean paper-like texture,
+      morning sunlight atmosphere,
+      fresh and welcoming aesthetic
+
+  - id: gradient-flow
+    name: Gradient Flow
+    category: mood
+    description: Smooth color transitions for dynamic feel
+    previewGradient: "linear-gradient(135deg, #667eea 0%, #764ba2 33%, #f093fb 66%, #f5576c 100%)"
+    icon: 🌊
+    promptSnippet: >
+      Flowing gradient presentation atmosphere,
+      smooth color transitions from purple to pink to coral,
+      abstract wave or flow patterns,
+      dynamic and modern mood,
+      Instagram-inspired aesthetic,
+      energetic yet professional,
+      color therapy calming effect

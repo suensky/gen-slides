@@ -1,5 +1,11 @@
 export type SlideLayout = 'center' | 'left' | 'right' | 'top' | 'bottom' | 'split-left' | 'split-right' | 'diagonal' | 'scattered';
 
+// Theme configuration for presentations
+export interface SlideTheme {
+  themeId: string | null; // null = per-slide images (current behavior)
+  useConsistentBackground: boolean;
+}
+
 export interface Slide {
   id: string;
   title: string;
@@ -11,6 +17,7 @@ export interface Slide {
   isGeneratingImage?: boolean;
   generationFailed?: boolean;
   customCanvasJson?: string; // Persist extra elements and state
+  themeBackground?: string; // Base64 for themed background (shared across slides)
 }
 
 export interface Attachment {
@@ -26,4 +33,5 @@ export interface PresentationData {
   topic: string;
   slides: Slide[];
   createdAt: number;
+  themeId?: string; // Optional theme ID for consistent backgrounds
 }

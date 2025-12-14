@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { ArrowLeft, Download, Loader2, Undo, Redo, Play, ChevronDown, FileText, Presentation } from 'lucide-react';
+import { ArrowLeft, Download, Loader2, Undo, Redo, Play, ChevronDown, FileText, Presentation, Palette, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import jsPDF from 'jspdf';
 import pptxgen from 'pptxgenjs';
 import { Slide } from '../types';
-import { generateSlideImage, generateSingleSlide, ImageConfig } from '../services/geminiService';
+import { generateSlideImage, generateSingleSlide, ImageConfig, generateThemedBackground } from '../services/geminiService';
 import { updateSlideImageInPresentation, updateSlideContentInPresentation, savePresentation } from '../services/db';
 
 // Sub-components
@@ -12,6 +12,8 @@ import SlideViewer from './SlideViewer';
 import RegenerateModal from './RegenerateModal';
 import NewSlideModal from './NewSlideModal';
 import ConfirmationModal from './ConfirmationModal';
+import ThemeMarketplace from './ThemeMarketplace';
+import { ThemeOption, getThemeById } from '../services/themes';
 
 import PresentationMode from './PresentationMode';
 
@@ -21,6 +23,7 @@ interface SlideShowProps {
   topic: string;
   presentationId: string;
   imageConfig: ImageConfig;
+  initialThemeId?: string | null;
 }
 
 // Replicating CanvasObject interface for parsing purposes
@@ -40,7 +43,7 @@ interface CanvasObject {
   field?: 'title' | 'content';
 }
 
-const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, topic, presentationId, imageConfig }) => {
+const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, topic, presentationId, imageConfig, initialThemeId }) => {
   const [slides, setSlides] = useState<Slide[]>(initialSlides);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [generatingCount, setGeneratingCount] = useState(0);
@@ -67,6 +70,11 @@ const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, to
   // Presentation Mode State
   const [isPresentMode, setIsPresentMode] = useState(false);
   const [isCreatingSlide, setIsCreatingSlide] = useState(false);
+
+  // Theme Marketplace State
+  const [showThemePanel, setShowThemePanel] = useState(false);
+  const [selectedThemeId, setSelectedThemeId] = useState<string | null>(initialThemeId || null);
+  const [isApplyingTheme, setIsApplyingTheme] = useState(false);
 
   const generatedRef = useRef<Set<string>>(new Set());
   const abortedRef = useRef<Set<string>>(new Set());
@@ -690,6 +698,59 @@ const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, to
     }
   }
 
+  // --- Theme Application ---
+  const handleSelectTheme = (theme: ThemeOption | null) => {
+    setSelectedThemeId(theme?.id || null);
+  };
+
+  const handleApplyTheme = async () => {
+    if (!selectedThemeId) return;
+
+    const theme = getThemeById(selectedThemeId);
+    if (!theme) return;
+
+    setIsApplyingTheme(true);
+
+    try {
+      // Generate themed background
+      const themedBackground = await generateThemedBackground(theme, topic, imageConfig);
+
+      if (!themedBackground) {
+        throw new Error('Failed to generate themed background');
+      }
+
+      // Apply to all slides
+      const updatedSlides = slides.map(slide => ({
+        ...slide,
+        themeBackground: themedBackground,
+        imageBase64: themedBackground // Use theme as the image
+      }));
+
+      setSlides(updatedSlides);
+      addToHistory(updatedSlides);
+
+      // Save to DB
+      await savePresentation({
+        id: presentationId,
+        topic,
+        slides: updatedSlides,
+        createdAt: Date.now(),
+        themeId: selectedThemeId
+      });
+
+      // Update cache
+      updatedSlides.forEach(slide => {
+        imageCache.current[slide.id] = themedBackground;
+      });
+
+    } catch (error) {
+      console.error('Failed to apply theme:', error);
+      alert('Failed to apply theme. Please try again.');
+    } finally {
+      setIsApplyingTheme(false);
+    }
+  };
+
   const currentSlide = slides[currentIndex];
 
   return (
@@ -741,6 +802,25 @@ const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, to
               Processing {generatingCount}...
             </span>
           )}
+
+          {/* Theme Toggle Button */}
+          <button
+            onClick={() => setShowThemePanel(!showThemePanel)}
+            className={`
+              p-2 rounded-lg transition-all flex items-center gap-1.5
+              ${showThemePanel
+                ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
+                : 'hover:bg-slate-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+              }
+            `}
+            title={showThemePanel ? 'Close Themes' : 'Open Themes'}
+          >
+            <Palette size={18} />
+            {showThemePanel
+              ? <PanelRightClose size={14} className="hidden sm:block" />
+              : <PanelRightOpen size={14} className="hidden sm:block" />
+            }
+          </button>
 
           <button
             onClick={() => setIsPresentMode(true)}
@@ -794,22 +874,43 @@ const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, to
           onDelete={requestDeleteSlide}
         />
 
-        <SlideViewer
-          key={currentSlide?.id}
-          slide={currentSlide}
-          isFirst={currentIndex === 0}
-          isLast={currentIndex === slides.length - 1}
-          onPrev={() => setCurrentIndex(c => Math.max(0, c - 1))}
-          onNext={() => setCurrentIndex(c => Math.min(slides.length - 1, c + 1))}
-          onDelete={() => requestDeleteSlide(currentIndex)}
-          onStopGeneration={handleStopGenerating}
-          onRetry={handleRetry}
-          onIgnore={handleIgnore}
-          onOpenRegenerateModal={handleOpenRegenerateModal}
-          onTextChange={handleTextChange}
-          onCanvasChange={handleCanvasChange}
-          onTextBlur={handleTextBlur}
-        />
+        <div className="flex-1 flex overflow-hidden">
+          <SlideViewer
+            key={currentSlide?.id}
+            slide={currentSlide}
+            isFirst={currentIndex === 0}
+            isLast={currentIndex === slides.length - 1}
+            onPrev={() => setCurrentIndex(c => Math.max(0, c - 1))}
+            onNext={() => setCurrentIndex(c => Math.min(slides.length - 1, c + 1))}
+            onDelete={() => requestDeleteSlide(currentIndex)}
+            onStopGeneration={handleStopGenerating}
+            onRetry={handleRetry}
+            onIgnore={handleIgnore}
+            onOpenRegenerateModal={handleOpenRegenerateModal}
+            onTextChange={handleTextChange}
+            onCanvasChange={handleCanvasChange}
+            onTextBlur={handleTextBlur}
+          />
+
+          {/* Theme Marketplace Panel */}
+          <div className={`
+            flex-none transition-all duration-300 ease-out overflow-hidden
+            ${showThemePanel ? 'w-80' : 'w-0'}
+          `}>
+            <div className="w-80 h-full">
+              <ThemeMarketplace
+                isOpen={showThemePanel}
+                onClose={() => setShowThemePanel(false)}
+                selectedThemeId={selectedThemeId}
+                onSelectTheme={handleSelectTheme}
+                onApplyTheme={handleApplyTheme}
+                isApplying={isApplyingTheme}
+                showApplyButton={true}
+                mode="application"
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
       <RegenerateModal

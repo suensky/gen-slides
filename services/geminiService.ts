@@ -335,3 +335,84 @@ export const generateSlideImage = async (
     return "";
   }
 };
+
+// Theme-related imports
+import { ThemeOption } from './themes';
+
+// Generate consistent themed background for all slides in a theme
+export const generateThemedBackground = async (
+  theme: ThemeOption,
+  presentationContext: string = '',
+  config: ImageConfig = DEFAULT_IMAGE_CONFIG
+): Promise<string> => {
+  try {
+    const prompt = `
+      Premium presentation background with consistent, cohesive visual theme.
+      
+      === THEME: ${theme.name} ===
+      ${theme.promptSnippet}
+      
+      === PRESENTATION CONTEXT ===
+      ${presentationContext || 'Professional business presentation'}
+      
+      === TECHNICAL SPECIFICATIONS ===
+      - Aspect Ratio: ${config.aspectRatio}
+      - Resolution: 4K quality, crystal clear
+      - Style: Premium, cohesive, consistent across multiple slides
+      
+      === DESIGN REQUIREMENTS ===
+      - Create a versatile background that works across ALL slides in a deck
+      - Strategic negative space in center and text-friendly areas
+      - Consistent visual language and color palette
+      - Subtle, non-distracting patterns that don't compete with content
+      - Professional gradient transitions
+      - Edge lighting or subtle decorative elements only at borders
+      
+      === VISUAL QUALITY ===
+      - Smooth, seamless gradients
+      - High-end material textures where appropriate
+      - Sophisticated color grading
+      - Studio-quality lighting effects
+      
+      === ABSOLUTE REQUIREMENTS ===
+      - ZERO text, words, letters, numbers, or characters
+      - Pure visual background only - suitable for ANY slide content
+      - No watermarks, logos, or overlays
+      - Must work with both light and dark text overlays
+      - Timeless, professional aesthetic
+    `;
+
+    // Build imageConfig based on model capabilities
+    const imageConfig: { aspectRatio: string; imageSize?: string } = {
+      aspectRatio: config.aspectRatio
+    };
+
+    // Only add imageSize for models that support it
+    const modelInfo = IMAGE_MODELS.find(m => m.id === config.model);
+    if (modelInfo?.supportsImageSize && config.imageSize) {
+      imageConfig.imageSize = config.imageSize;
+    }
+
+    const response = await ai.models.generateContent({
+      model: config.model,
+      contents: prompt,
+      config: {
+        imageConfig
+      }
+    });
+
+    // Iterate to find the image part
+    if (response.candidates?.[0]?.content?.parts) {
+      for (const part of response.candidates[0].content.parts) {
+        if (part.inlineData && part.inlineData.data) {
+          return part.inlineData.data;
+        }
+      }
+    }
+
+    throw new Error("No image data found in response");
+  } catch (error) {
+    console.error("Error generating themed background:", error);
+    return "";
+  }
+};

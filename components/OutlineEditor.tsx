@@ -2,13 +2,14 @@ import React, { useEffect, useState, useRef } from 'react';
 import { ArrowLeft, Loader2, Play, Trash2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Slide, Attachment } from '../types';
 import { generateOutlineStream } from '../services/geminiService';
+import ThemeSelector from './ThemeSelector';
 
 
 interface OutlineEditorProps {
   topic: string;
   initialAttachments: Attachment[];
   onBack: () => void;
-  onGenerateSlides: (slides: Slide[]) => void;
+  onGenerateSlides: (slides: Slide[], themeId: string | null) => void;
 }
 
 const OutlineEditor: React.FC<OutlineEditorProps> = ({ topic, initialAttachments, onBack, onGenerateSlides }) => {
@@ -17,6 +18,7 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ topic, initialAttachments
   const [isGenerating, setIsGenerating] = useState(true);
   const [parseError, setParseError] = useState(false);
   const [hasStreamStarted, setHasStreamStarted] = useState(false);
+  const [selectedThemeId, setSelectedThemeId] = useState<string | null>(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -141,6 +143,16 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ topic, initialAttachments
               </div>
             </div>
 
+            {/* Theme Selector - Show when slides are ready */}
+            {slides.length > 0 && !isGenerating && (
+              <div className="mb-6">
+                <ThemeSelector
+                  selectedThemeId={selectedThemeId}
+                  onSelectTheme={setSelectedThemeId}
+                />
+              </div>
+            )}
+
             {slides.length === 0 && !parseError && (
               <div className="flex flex-col items-center justify-center h-64 text-zinc-500 space-y-4">
                 {hasStreamStarted ? <Loader2 className="animate-spin text-purple-600 dark:text-purple-500" size={32} /> : null}
@@ -204,7 +216,7 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ topic, initialAttachments
             {slides.length > 0 && (
               <div className="fixed bottom-6 right-6 z-20">
                 <button
-                  onClick={() => onGenerateSlides(slides)}
+                  onClick={() => onGenerateSlides(slides, selectedThemeId)}
                   disabled={isGenerating}
                   className="bg-zinc-900 dark:bg-white text-white dark:text-black hover:bg-zinc-700 dark:hover:bg-zinc-200 shadow-lg shadow-zinc-900/20 dark:shadow-purple-900/20 px-6 py-3 rounded-full font-bold flex items-center gap-2 transition-all transform hover:scale-105 disabled:opacity-50 disabled:scale-100"
                 >
