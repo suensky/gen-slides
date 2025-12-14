@@ -873,7 +873,6 @@ const SlideShow: React.FC<SlideShowProps> = ({ slides: initialSlides, onBack, to
           {/* Slide Viewer with Theme Toggle Button */}
           <div className="flex-1 min-w-0 relative overflow-hidden flex flex-col">
             <SlideViewer
-              key={currentSlide?.id}
               slide={currentSlide}
               isFirst={currentIndex === 0}
               isLast={currentIndex === slides.length - 1}

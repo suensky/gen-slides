@@ -50,7 +50,22 @@ interface CanvasObject {
 // Separate component for Background Image to use useImage hook cleanly
 // Memoized to prevent unnecessary re-fetching/decoding of base64 data
 const BackgroundImageLayer = React.memo(({ base64 }: { base64?: string }) => {
-    const [image] = useImage(base64 ? `data:image/png;base64,${base64}` : '', 'anonymous');
+    const [image, setImage] = useState<HTMLImageElement | null>(null);
+
+    useEffect(() => {
+        if (!base64) {
+            setImage(null);
+            return;
+        }
+
+        const img = new window.Image();
+        img.src = `data:image/png;base64,${base64}`;
+        img.crossOrigin = 'Anonymous';
+
+        img.onload = () => {
+            setImage(img);
+        };
+    }, [base64]);
 
     if (!image) {
         // Placeholder dark background
@@ -1147,8 +1162,8 @@ const SlideViewer: React.FC<SlideViewerProps> = ({
                             onClick={() => setShowAiDropdown(!showAiDropdown)}
                             disabled={isEnhancing || !slide.speakerNotes?.trim()}
                             className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${isEnhancing
-                                    ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
-                                    : 'bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-400 hover:to-indigo-400 text-white shadow-md shadow-purple-500/20 disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed'
+                                ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
+                                : 'bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-400 hover:to-indigo-400 text-white shadow-md shadow-purple-500/20 disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed'
                                 }`}
                         >
                             {isEnhancing ? (
