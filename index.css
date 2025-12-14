@@ -1,5 +1,9 @@
 /* Light and Dark Theme CSS Variables */
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   /* Light theme (default) */
   --bg-primary: #fafafa;
