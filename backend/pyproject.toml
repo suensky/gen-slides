@@ -1,0 +1,16 @@
+[project]
+name = "gen-slides-python"
+version = "0.1.0"
+description = "Gen Slides backend server"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = []
+
+[dependency-groups]
+dev = [
+  "ruff>=0.9.0",
+]
+
+[tool.uv]
+# Keep the runtime environment lean by default; opt into groups explicitly (e.g. `uv sync --group dev`).
+default-groups = []

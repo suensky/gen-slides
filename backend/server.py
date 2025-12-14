@@ -12,8 +12,48 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 
-ROOT = pathlib.Path(__file__).resolve().parents[1]
+BACKEND_DIR = pathlib.Path(__file__).resolve().parent
+ROOT = BACKEND_DIR.parent
 DIST_DIR = ROOT / "dist"
+
+
+def _strip_quotes(value: str) -> str:
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+        return value[1:-1]
+    return value
+
+
+def _load_dotenv_file(path: pathlib.Path) -> None:
+    try:
+        raw = path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return
+    except OSError:
+        return
+
+    for line in raw.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        if stripped.startswith("export "):
+            stripped = stripped[len("export ") :].lstrip()
+        if "=" not in stripped:
+            continue
+        key, value = stripped.split("=", 1)
+        key = key.strip()
+        if not key or key in os.environ:
+            continue
+        os.environ[key] = _strip_quotes(value)
+
+
+def _load_dotenv() -> None:
+    # Prefer already-exported environment variables; only fill in missing keys.
+    _load_dotenv_file(BACKEND_DIR / ".env.local")
+    _load_dotenv_file(ROOT / ".env.local")
+
+
+_load_dotenv()
 
 PORT = int(os.environ.get("PORT", "8787"))
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "").strip()

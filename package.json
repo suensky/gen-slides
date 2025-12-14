@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -k -r \"python3 backend/server.py\" \"vite\"",
+    "dev": "concurrently -k -r \"uv --project backend run backend/server.py\" \"vite\"",
     "build": "vite build",
-    "start": "python3 backend/server.py",
+    "start": "uv --project backend run backend/server.py",
     "preview": "npm run build && npm run start"
   },
   "dependencies": {
