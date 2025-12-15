@@ -244,7 +244,8 @@ const PresenterView: React.FC<PresenterViewProps> = ({ slides, startIndex, onExi
         }
 
         // Create URL for audience mode
-        const audienceUrl = `${window.location.origin}${window.location.pathname}?mode=audience&startIndex=${currentIndex}`;
+        const audienceUrl = new URL('/audience', window.location.origin);
+        audienceUrl.searchParams.set('startIndex', String(currentIndex));
 
         // Try to open on second screen if available
         const width = 1280;
@@ -252,7 +253,7 @@ const PresenterView: React.FC<PresenterViewProps> = ({ slides, startIndex, onExi
         const left = window.screen.availWidth; // Position to the right (second monitor)
 
         audienceWindowRef.current = window.open(
-            audienceUrl,
+            audienceUrl.toString(),
             'audience-window',
             `width=${width},height=${height},left=${left},top=0,menubar=no,toolbar=no,location=no,status=no`
         );
